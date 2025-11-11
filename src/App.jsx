@@ -4,7 +4,7 @@ import Header from "./components/Header";
 import Footer from "./components/Footer";
 
 // Pages
-import HomePage from "./pages/HomePage";
+import HomePage from "./pages/Homepage";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import QuizTaking from "./pages/QuizTaking";
