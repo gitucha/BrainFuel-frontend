@@ -1,7 +1,21 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
 function Header() {
+  const { pathname } = useLocation();
+
+  const navLinks = [
+    { name: "Home", path: "/" },
+    { name: "Leaderboard", path: "/leaderboard" },
+    { name: "Achievements", path: "/achievements" },
+    { name: "Shop", path: "/shop" },
+    { name: "Minigames", path: "/minigames" },
+    { name: "Subscription", path: "/subscription" },
+    { name: "Notifications", path: "/notifications" },
+    { name: "Dashboard", path: "/dashboard" },
+    {}
+  ];
+
   return (
     <header className="bg-white border-b sticky top-0 z-50">
       <div className="max-w-6xl mx-auto flex items-center justify-between px-6 py-3">
@@ -10,21 +24,17 @@ function Header() {
         </Link>
 
         <nav className="flex items-center gap-6 text-sm font-medium">
-          <Link to="/dashboard" className="hover:text-blue-600">
-            Dashboard
-          </Link>
-          <Link to="/leaderboard" className="hover:text-blue-600">
-            Leaderboard
-          </Link>
-          <Link to="/achievements" className="hover:text-blue-600">
-            Achievements
-          </Link>
-          <Link to="/shop" className="hover:text-blue-600">
-            Shop
-          </Link>
-          <Link to="/subscription" className="hover:text-blue-600">
-            Premium
-          </Link>
+          {navLinks.map((link) => (
+            <Link
+              key={link.name}
+              to={link.path}
+              className={`hover:text-blue-600 ${
+                pathname === link.path ? "text-blue-600 font-semibold" : ""
+              }`}
+            >
+              {link.name}
+            </Link>
+          ))}
         </nav>
 
         <Link

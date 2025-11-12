@@ -1,64 +1,86 @@
 import React, { useState } from "react";
 
 function QuizTaking() {
-  const [selected, setSelected] = useState("");
+  const questions = [
+    {
+      id: 1,
+      question:
+        "Which of the following data structures operates on a Last-In, First-Out (LIFO) principle?",
+      options: ["Queue", "Stack", "Linked List", "Tree"],
+      answer: "Stack",
+    },
+  ];
+
+  const [selected, setSelected] = useState(null);
   const [submitted, setSubmitted] = useState(false);
 
   const handleSubmit = () => {
-    if (!selected) return alert("Please select an answer!");
     setSubmitted(true);
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-6 py-8">
-      <div className="bg-white p-8 rounded shadow-sm">
-        <h2 className="text-xl font-bold text-blue-600 text-center">
-          BrainFuel Quiz Challenge
-        </h2>
+    <div className="max-w-5xl mx-auto px-6 py-10">
+      <h2 className="text-3xl font-bold text-center mb-10">
+         BrainFuel Quiz Challenge
+      </h2>
 
-        <div className="mt-6">
-          <p className="text-sm text-gray-600">XP: 0 • Time Left: 07:00</p>
+      <div className="bg-white shadow-sm rounded-lg p-8">
+        {/* Quiz Header */}
+        <div className="flex justify-between items-center mb-6 text-sm text-gray-500">
+          <span> Time Left: 07:00</span>
+          <span> XP: 0</span>
+        </div>
 
-          <div className="mt-4 border rounded p-6">
-            <div className="font-semibold mb-4">
-              Which data structure operates on a Last-In, First-Out (LIFO) principle?
-            </div>
+        {/* Question Card */}
+        <div>
+          {questions.map((q) => (
+            <div key={q.id}>
+              <h3 className="font-semibold text-gray-800 mb-4">
+                Question {q.id}: {q.question}
+              </h3>
 
-            {["Queue", "Stack", "Linked List", "Tree"].map((option) => (
-              <label
-                key={option}
-                className={`block border p-3 rounded mb-2 cursor-pointer ${
-                  selected === option ? "bg-blue-50 border-blue-400" : ""
+              <div className="space-y-3">
+                {q.options.map((opt) => (
+                  <label
+                    key={opt}
+                    className={`flex items-center gap-3 border rounded-lg px-4 py-3 cursor-pointer ${
+                      selected === opt
+                        ? "border-blue-500 bg-blue-50"
+                        : "border-gray-200 hover:border-blue-200"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name={`q-${q.id}`}
+                      value={opt}
+                      checked={selected === opt}
+                      onChange={() => setSelected(opt)}
+                      className="text-blue-600"
+                    />
+                    <span className="text-gray-700">{opt}</span>
+                  </label>
+                ))}
+              </div>
+
+              <button
+                onClick={handleSubmit}
+                disabled={!selected || submitted}
+                className={`mt-6 px-6 py-2 rounded-md ${
+                  submitted
+                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                    : "bg-blue-600 text-white hover:bg-blue-700"
                 }`}
               >
-                <input
-                  type="radio"
-                  name="q1"
-                  value={option}
-                  checked={selected === option}
-                  onChange={(e) => setSelected(e.target.value)}
-                  className="mr-2"
-                />
-                {option}
-              </label>
-            ))}
+                {submitted ? "Submitted!" : "Submit Answer"}
+              </button>
 
-            <button
-              onClick={handleSubmit}
-              className={`mt-4 px-4 py-2 rounded ${
-                submitted
-                  ? "bg-gray-300 text-gray-600"
-                  : "bg-blue-600 text-white hover:bg-blue-700"
-              }`}
-              disabled={submitted}
-            >
-              {submitted ? "Submitted!" : "Submit"}
-            </button>
-
-            {submitted && (
-              <div className="mt-3 text-green-600 font-medium">✅ Correct! +50 XP</div>
-            )}
-          </div>
+              {submitted && (
+                <p className="mt-4 text-green-600 font-semibold">
+                  Correct! The answer is {q.answer}.
+                </p>
+              )}
+            </div>
+          ))}
         </div>
       </div>
     </div>

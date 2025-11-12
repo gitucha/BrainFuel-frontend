@@ -6,6 +6,7 @@ function SideNav() {
 
   const links = [
     { name: "Dashboard", path: "/dashboard" },
+    { name: "Quizzes", path: "/quiz-taking" },
     { name: "Create Quiz", path: "/create-quiz" },
     { name: "Leaderboards", path: "/leaderboard" },
     { name: "Achievements", path: "/achievements" },
