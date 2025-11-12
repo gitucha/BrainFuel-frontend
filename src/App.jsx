@@ -5,8 +5,11 @@ import Footer from "./components/Footer";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider } from "./context/AuthContext";
 
+
+
 // Pages
 import HomePage from "./pages/Homepage";
+import Register from "./pages/Register";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import QuizTakingEnhanced from "./pages/QuizTakingEnhanced";
@@ -31,6 +34,7 @@ function App() {
               {/* Public routes */}
               <Route path="/" element={<HomePage />} />
               <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
 
               {/* Protected routes */}
               <Route

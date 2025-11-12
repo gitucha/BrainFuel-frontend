@@ -1,18 +1,39 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
 
 function Login() {
   const navigate = useNavigate();
+  const { login } = useAuth();
 
-  const handleLogin = (e) => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleLogin = async (e) => {
     e.preventDefault();
-    localStorage.setItem("access", "demo-token");
-    navigate("/dashboard");
+    setError("");
+    setLoading(true);
+
+    try {
+      await login(email, password);
+      navigate("/dashboard");
+    } catch (err) {
+      const msg =
+        err.response?.data?.detail ||
+        err.response?.data?.error ||
+        "Invalid email or password";
+      setError(msg);
+    }
+
+    setLoading(false);
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="max-w-4xl w-full grid grid-cols-1 md:grid-cols-2 bg-white rounded-lg shadow overflow-hidden">
+        
         <div className="p-10 bg-blue-50 flex items-center justify-center">
           <div>
             <h2 className="text-2xl font-bold text-blue-700">
@@ -26,11 +47,39 @@ function Login() {
 
         <form onSubmit={handleLogin} className="p-10 flex flex-col justify-center">
           <h3 className="text-lg font-semibold mb-6">Welcome Back, Learner!</h3>
-          <input type="email" placeholder="Email" required className="w-full mb-4 border rounded p-3" />
-          <input type="password" placeholder="Password" required className="w-full mb-6 border rounded p-3" />
-          <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition">
-            Login
+
+          {error && (
+            <div className="bg-red-100 text-red-700 px-3 py-2 rounded mb-4 text-sm">
+              {error}
+            </div>
+          )}
+
+          <input
+            type="email"
+            placeholder="Email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full mb-4 border rounded p-3"
+          />
+
+          <input
+            type="password"
+            placeholder="Password"
+            required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full mb-6 border rounded p-3"
+          />
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition"
+          >
+            {loading ? "Logging in..." : "Login"}
           </button>
+
           <div className="flex justify-between mt-4 text-sm text-gray-500">
             <a href="#">Forgot Password?</a>
             <Link to="/register" className="text-blue-600 hover:underline">
