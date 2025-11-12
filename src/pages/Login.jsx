@@ -81,7 +81,8 @@ function Login() {
           </button>
 
           <div className="flex justify-between mt-4 text-sm text-gray-500">
-            <a href="#">Forgot Password?</a>
+           <Link to="/forgot-password">Forgot Password?</Link>
+
             <Link to="/register" className="text-blue-600 hover:underline">
               Sign Up
             </Link>

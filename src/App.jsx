@@ -11,6 +11,8 @@ import { AuthProvider } from "./context/AuthContext";
 import HomePage from "./pages/Homepage";
 import Register from "./pages/Register";
 import Login from "./pages/Login";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
 import QuizTakingEnhanced from "./pages/QuizTakingEnhanced";
 import CreateQuiz from "./pages/CreateQuiz";
@@ -35,6 +37,8 @@ function App() {
               <Route path="/" element={<HomePage />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password/:uid/:token" element={<ResetPassword />} />
 
               {/* Protected routes */}
               <Route
