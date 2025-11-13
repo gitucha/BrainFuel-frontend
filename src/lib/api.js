@@ -1,77 +1,51 @@
-// /src/lib/api.js
 import axios from "axios";
 
-export const API_BASE = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api";
-
 const api = axios.create({
-  baseURL: API_BASE,
-  headers: {
-    "Content-Type": "application/json",
-  },
+  baseURL: "http://127.0.0.1:8000/api",
 });
 
-// Helper to read tokens
-const getAccess = () => localStorage.getItem("access");
-const getRefresh = () => localStorage.getItem("refresh");
-
-// Attach access token
+// Attach JWT token before each request
 api.interceptors.request.use(
   (config) => {
-    const token = getAccess();
-    if (token) config.headers.Authorization = `Bearer ${token}`;
+    const token = localStorage.getItem("access");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
     return config;
   },
-  (err) => Promise.reject(err)
+  (error) => Promise.reject(error)
 );
 
-// Response interceptor: try refresh once on 401
+// Handle token refresh on 401
 api.interceptors.response.use(
-  (res) => res,
+  (response) => response,
   async (error) => {
-    const original = error.config;
+    if (
+      error.response?.status === 401 &&
+      !error.config._retry &&
+      localStorage.getItem("refresh")
+    ) {
+      error.config._retry = true;
 
-    // If no response or not 401, just reject
-    if (!error.response || error.response.status !== 401) {
-      return Promise.reject(error);
-    }
+      try {
+        const refreshResponse = await axios.post(
+          "http://127.0.0.1:8000/api/auth/token/refresh/",
+          { refresh: localStorage.getItem("refresh") }
+        );
 
-    // Prevent infinite loop
-    if (original._retry) {
-      // Already tried refresh — give up
-      // Clear tokens and redirect to login (or let auth context handle it)
-      localStorage.removeItem("access");
-      localStorage.removeItem("refresh");
-      return Promise.reject(error);
-    }
+        localStorage.setItem("access", refreshResponse.data.access);
 
-    original._retry = true;
+        error.config.headers.Authorization = `Bearer ${refreshResponse.data.access}`;
 
-    // Try refresh using raw axios (no interceptors)
-    try {
-      const refresh = getRefresh();
-      if (!refresh) {
-        localStorage.removeItem("access");
-        localStorage.removeItem("refresh");
-        return Promise.reject(error);
+        return api(error.config);
+      } catch (refreshError) {
+        localStorage.clear();
+        window.location.href = "/login";
+        refreshError.config = error.config;
       }
-
-      const { data } = await axios.post(`${API_BASE}/auth/token/refresh/`, {
-        refresh,
-      });
-
-      // store new access
-      localStorage.setItem("access", data.access);
-
-      // update header and retry original request
-      original.headers.Authorization = `Bearer ${data.access}`;
-      return api(original);
-    } catch (refreshErr) {
-      // Refresh failed — clear tokens
-      console.error("Token refresh failed:", refreshErr?.response?.data || refreshErr);
-      localStorage.removeItem("access");
-      localStorage.removeItem("refresh");
-      return Promise.reject(refreshErr);
     }
+
+    return Promise.reject(error);
   }
 );
 

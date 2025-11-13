@@ -1,118 +1,109 @@
 import React, { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
+import api from "../lib/api";
 
 function CreateQuiz() {
-  const [quiz, setQuiz] = useState({
+  const navigate = useNavigate();
+  const [form, setForm] = useState({
     title: "",
     description: "",
     category: "",
-    difficulty: "",
-    questions: [{ text: "", options: ["", "", "", ""], correct: 0 }],
+    difficulty: "easy",
+    is_premium: false,
+  });
+  const [error, setError] = useState("");
+
+  const createMut = useMutation({
+    mutationFn: async (payload) => {
+      const { data } = await api.post("/quizzes/create/", payload);
+      return data;
+    },
+    onSuccess: (quiz) => {
+      navigate(`/quiz-builder/${quiz.id}`);
+    },
+    onError: () => setError("Could not create quiz."),
   });
 
-  const addQuestion = () => {
-    setQuiz({
-      ...quiz,
-      questions: [...quiz.questions, { text: "", options: ["", "", "", ""], correct: 0 }],
-    });
+  const handleChange = (e) => {
+    const { name, value, checked, type } = e.target;
+    setForm((f) => ({ ...f, [name]: type === "checkbox" ? checked : value }));
   };
 
-  const handleQuestionChange = (idx, field, value) => {
-    const updated = [...quiz.questions];
-    updated[idx][field] = value;
-    setQuiz({ ...quiz, questions: updated });
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    createMut.mutate(form);
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-10">
-      <h2 className="text-3xl font-bold text-center mb-8">Create a Quiz</h2>
+    <div className="max-w-3xl mx-auto p-6 mt-8 bg-white rounded-xl shadow">
+      <h2 className="text-xl font-semibold mb-4">Create Quiz</h2>
 
-      <div className="bg-white rounded-lg shadow-sm p-8">
-        {/* Quiz Details */}
-        <h3 className="font-semibold text-gray-800 mb-4">Quiz Details</h3>
-        <div className="grid sm:grid-cols-2 gap-4 mb-8">
+      {error && <p className="text-red-500 mb-4">{error}</p>}
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+
+        <div>
+          <label className="text-sm font-medium">Title</label>
           <input
-            type="text"
-            placeholder="Quiz Title"
-            className="border rounded px-4 py-2"
-            value={quiz.title}
-            onChange={(e) => setQuiz({ ...quiz, title: e.target.value })}
-          />
-          <input
-            type="text"
-            placeholder="Category"
-            className="border rounded px-4 py-2"
-            value={quiz.category}
-            onChange={(e) => setQuiz({ ...quiz, category: e.target.value })}
-          />
-          <input
-            type="text"
-            placeholder="Difficulty"
-            className="border rounded px-4 py-2"
-            value={quiz.difficulty}
-            onChange={(e) => setQuiz({ ...quiz, difficulty: e.target.value })}
+            name="title"
+            value={form.title}
+            onChange={handleChange}
+            required
+            className="w-full border px-3 py-2 rounded"
           />
         </div>
 
-        <textarea
-          placeholder="Quiz Description"
-          className="border rounded px-4 py-2 w-full mb-8"
-          rows="3"
-          value={quiz.description}
-          onChange={(e) => setQuiz({ ...quiz, description: e.target.value })}
-        ></textarea>
+        <div>
+          <label className="text-sm font-medium">Description</label>
+          <textarea
+            name="description"
+            value={form.description}
+            onChange={handleChange}
+            className="w-full border px-3 py-2 rounded"
+          />
+        </div>
 
-        {/* Questions */}
-        <h3 className="font-semibold text-gray-800 mb-4">Quiz Questions</h3>
-        {quiz.questions.map((q, idx) => (
-          <div key={idx} className="mb-8 border rounded-lg p-6 bg-gray-50">
-            <h4 className="font-medium text-gray-700 mb-4">Question {idx + 1}</h4>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="text-sm font-medium">Category</label>
             <input
-              type="text"
-              placeholder="Question Text"
-              className="border rounded px-4 py-2 w-full mb-4"
-              value={q.text}
-              onChange={(e) => handleQuestionChange(idx, "text", e.target.value)}
+              name="category"
+              value={form.category}
+              onChange={handleChange}
+              className="w-full border px-3 py-2 rounded"
             />
-            {q.options.map((opt, i) => (
-              <div key={i} className="flex items-center gap-3 mb-2">
-                <input
-                  type="radio"
-                  name={`correct-${idx}`}
-                  checked={q.correct === i}
-                  onChange={() => handleQuestionChange(idx, "correct", i)}
-                />
-                <input
-                  type="text"
-                  placeholder={`Option ${i + 1}`}
-                  className="border rounded px-4 py-2 flex-1"
-                  value={opt}
-                  onChange={(e) => {
-                    const updated = [...q.options];
-                    updated[i] = e.target.value;
-                    handleQuestionChange(idx, "options", updated);
-                  }}
-                />
-              </div>
-            ))}
           </div>
-        ))}
 
-        <button
-          onClick={addQuestion}
-          className="bg-gray-100 border border-gray-300 px-4 py-2 rounded hover:bg-gray-200 mb-6"
-        >
-          + Add New Question
-        </button>
-
-        <div className="flex gap-4">
-          <button className="bg-gray-200 px-6 py-2 rounded hover:bg-gray-300">
-            Save Draft
-          </button>
-          <button className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">
-            Publish Quiz
-          </button>
+          <div>
+            <label className="text-sm font-medium">Difficulty</label>
+            <select
+              name="difficulty"
+              value={form.difficulty}
+              onChange={handleChange}
+              className="w-full border px-3 py-2 rounded"
+            >
+              <option value="easy">easy</option>
+              <option value="medium">medium</option>
+              <option value="hard">hard</option>
+            </select>
+          </div>
         </div>
-      </div>
+
+        <div className="flex items-center gap-3">
+          <input
+            type="checkbox"
+            name="is_premium"
+            checked={form.is_premium}
+            onChange={handleChange}
+          />
+          <span className="text-sm">Premium Quiz</span>
+        </div>
+
+        <button className="px-4 py-2 bg-blue-600 text-white rounded">
+          Create & Continue
+        </button>
+      </form>
     </div>
   );
 }
