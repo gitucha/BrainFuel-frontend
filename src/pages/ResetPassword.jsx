@@ -5,61 +5,32 @@ import api from "../lib/api";
 function ResetPassword() {
   const { uid, token } = useParams();
   const navigate = useNavigate();
-
   const [password, setPassword] = useState("");
+  const [msg, setMsg] = useState("");
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState(false);
 
-  const handleSubmit = async (e) => {
+  const handle = async (e) => {
     e.preventDefault();
     setError("");
-
     try {
       await api.post(`/auth/password-reset-confirm/${uid}/${token}/`, { password });
-      setSuccess(true);
-      setTimeout(() => navigate("/login"), 1500);
+      setMsg("Password changed. Redirecting to login...");
+      setTimeout(()=>navigate("/login"), 1500);
     } catch (err) {
-        console.error(err);
-      setError("Invalid or expired link.");
+      setError(err.response?.data?.error || "Reset failed");
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-md bg-white rounded-xl shadow p-8">
-
-        <h2 className="text-2xl font-bold text-center mb-4">
-          Choose a New Password
-        </h2>
-
-        {error && (
-          <p className="bg-red-100 text-red-700 p-3 rounded mb-4">{error}</p>
-        )}
-
-        {success ? (
-          <p className="text-green-600 text-center">
-            Password updated! Redirecting...
-          </p>
-        ) : (
-          <form onSubmit={handleSubmit}>
-            <input
-              type="password"
-              placeholder="New password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full border p-3 rounded mb-4"
-            />
-
-            <button
-              type="submit"
-              className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
-            >
-              Update Password
-            </button>
-          </form>
-        )}
-
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+      <div className="bg-white rounded-lg shadow p-6 w-full max-w-md">
+        <h2 className="text-lg font-semibold mb-2">Choose a new password</h2>
+        {msg && <div className="p-3 bg-green-50 text-green-700 rounded mb-3">{msg}</div>}
+        {error && <div className="p-3 bg-red-50 text-red-700 rounded mb-3">{error}</div>}
+        <form onSubmit={handle} className="space-y-3">
+          <input type="password" value={password} onChange={(e)=>setPassword(e.target.value)} required placeholder="New password" className="w-full border rounded px-3 py-2" />
+          <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded">Change password</button>
+        </form>
       </div>
     </div>
   );

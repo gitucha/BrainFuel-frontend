@@ -5,8 +5,6 @@ import Footer from "./components/Footer";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider } from "./context/AuthContext";
 
-
-
 // Pages
 import HomePage from "./pages/Homepage";
 import Register from "./pages/Register";
@@ -14,7 +12,7 @@ import Login from "./pages/Login";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
-import QuizTakingEnhanced from "./pages/QuizTakingEnhanced";
+import QuizTakingGamified from "./pages/QuizTakingGamified";   // ⭐ REPLACE OLD ONE
 import CreateQuiz from "./pages/CreateQuiz";
 import AdminPanel from "./pages/AdminPanel";
 import Subscription from "./pages/Subscription";
@@ -31,16 +29,17 @@ function App() {
       <AuthProvider>
         <div className="min-h-screen flex flex-col bg-gray-50">
           <Header />
+
           <main className="flex-1">
             <Routes>
-              {/* Public routes */}
+              {/* PUBLIC ROUTES */}
               <Route path="/" element={<HomePage />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password/:uid/:token" element={<ResetPassword />} />
 
-              {/* Protected routes */}
+              {/* PROTECTED ROUTES */}
               <Route
                 path="/dashboard"
                 element={
@@ -49,14 +48,16 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+
               <Route
                 path="/quizzes/:id"
                 element={
                   <ProtectedRoute>
-                    <QuizTakingEnhanced />
+                    <QuizTakingGamified />
                   </ProtectedRoute>
                 }
               />
+
               <Route
                 path="/create-quiz"
                 element={
@@ -65,6 +66,7 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+
               <Route
                 path="/admin"
                 element={
@@ -73,6 +75,7 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+
               <Route
                 path="/subscription"
                 element={
@@ -81,6 +84,7 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+
               <Route
                 path="/leaderboard"
                 element={
@@ -89,6 +93,7 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+
               <Route
                 path="/achievements"
                 element={
@@ -97,6 +102,7 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+
               <Route
                 path="/shop"
                 element={
@@ -105,6 +111,7 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+
               <Route
                 path="/minigames"
                 element={
@@ -113,6 +120,7 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+
               <Route
                 path="/notifications"
                 element={
@@ -121,6 +129,7 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+
               <Route
                 path="/multiplayer/:roomId"
                 element={
@@ -131,6 +140,7 @@ function App() {
               />
             </Routes>
           </main>
+
           <Footer />
         </div>
       </AuthProvider>
