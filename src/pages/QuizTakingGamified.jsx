@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "../lib/api";
 import CoinBurst from "../components/CoinBurst";
-import LevelUpModal from "../components/LevelUpModal";
+
 import ThalerToast from "../components/ThalerToast";
 import { useAuth } from "../hooks/useAuth";
 
