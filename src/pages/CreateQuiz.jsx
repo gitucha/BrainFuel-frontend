@@ -1,107 +1,104 @@
 import React, { useState } from "react";
+import api from "../lib/api";
 import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import api from "../lib/api";
 
 function CreateQuiz() {
   const navigate = useNavigate();
-  const [form, setForm] = useState({
-    title: "",
-    description: "",
-    category: "",
-    difficulty: "easy",
-    is_premium: false,
-  });
-  const [error, setError] = useState("");
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [category, setCategory] = useState("");
+  const [questions, setQuestions] = useState([]);
 
-  const createMut = useMutation({
+  const addQuestion = () => {
+    setQuestions([
+      ...questions,
+      {
+        text: "",
+        options: [
+          { text: "", is_correct: false },
+          { text: "", is_correct: false },
+          { text: "", is_correct: false },
+          { text: "", is_correct: false },
+        ],
+      },
+    ]);
+  };
+
+  const createQuizMutation = useMutation({
     mutationFn: async (payload) => {
       const { data } = await api.post("/quizzes/create/", payload);
       return data;
     },
-    onSuccess: (quiz) => {
-      navigate(`/quiz-builder/${quiz.id}`);
-    },
-    onError: () => setError("Could not create quiz."),
+    onSuccess: () => navigate("/dashboard"),
+    onError: () => alert("Quiz creation failed"),
   });
-
-  const handleChange = (e) => {
-    const { name, value, checked, type } = e.target;
-    setForm((f) => ({ ...f, [name]: type === "checkbox" ? checked : value }));
-  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    createMut.mutate(form);
+    createQuizMutation.mutate({
+      title,
+      description,
+      category,
+      questions,
+    });
+  };
+
+  const updateQuestionText = (qi, text) => {
+    const updated = [...questions];
+    updated[qi].text = text;
+    setQuestions(updated);
+  };
+
+  const updateOption = (qi, oi, field, value) => {
+    const updated = [...questions];
+    updated[qi].options[oi][field] = value;
+    setQuestions(updated);
   };
 
   return (
-    <div className="max-w-3xl mx-auto p-6 mt-8 bg-white rounded-xl shadow">
-      <h2 className="text-xl font-semibold mb-4">Create Quiz</h2>
+    <div className="p-6 max-w-3xl mx-auto">
+      <h2 className="text-2xl font-bold mb-4">Create Quiz</h2>
 
-      {error && <p className="text-red-500 mb-4">{error}</p>}
+      <form className="space-y-4" onSubmit={handleSubmit}>
+        <input className="border p-2 w-full rounded" placeholder="Quiz Title"
+          value={title} onChange={(e) => setTitle(e.target.value)} />
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+        <textarea className="border p-2 w-full rounded" placeholder="Description"
+          value={description} onChange={(e) => setDescription(e.target.value)} />
 
-        <div>
-          <label className="text-sm font-medium">Title</label>
-          <input
-            name="title"
-            value={form.title}
-            onChange={handleChange}
-            required
-            className="w-full border px-3 py-2 rounded"
-          />
-        </div>
+        <input className="border p-2 w-full rounded" placeholder="Category"
+          value={category} onChange={(e) => setCategory(e.target.value)} />
 
-        <div>
-          <label className="text-sm font-medium">Description</label>
-          <textarea
-            name="description"
-            value={form.description}
-            onChange={handleChange}
-            className="w-full border px-3 py-2 rounded"
-          />
-        </div>
+        <button type="button" onClick={addQuestion}
+          className="px-4 py-2 bg-green-600 text-white rounded">
+          + Add Question
+        </button>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="text-sm font-medium">Category</label>
-            <input
-              name="category"
-              value={form.category}
-              onChange={handleChange}
-              className="w-full border px-3 py-2 rounded"
+        {questions.map((q, qi) => (
+          <div key={qi} className="border p-4 rounded mt-4 bg-gray-50">
+            <input className="border p-2 w-full rounded mb-3"
+              placeholder={`Question ${qi + 1}`}
+              value={q.text}
+              onChange={(e) => updateQuestionText(qi, e.target.value)}
             />
+
+            {q.options.map((opt, oi) => (
+              <div key={oi} className="flex items-center gap-3 mb-2">
+                <input className="border p-2 flex-1 rounded" placeholder={`Option ${oi + 1}`}
+                  value={opt.text}
+                  onChange={(e) => updateOption(qi, oi, "text", e.target.value)}
+                />
+                <input type="checkbox" checked={opt.is_correct}
+                  onChange={(e) => updateOption(qi, oi, "is_correct", e.target.checked)} />
+                <span>Correct</span>
+              </div>
+            ))}
           </div>
+        ))}
 
-          <div>
-            <label className="text-sm font-medium">Difficulty</label>
-            <select
-              name="difficulty"
-              value={form.difficulty}
-              onChange={handleChange}
-              className="w-full border px-3 py-2 rounded"
-            >
-              <option value="easy">easy</option>
-              <option value="medium">medium</option>
-              <option value="hard">hard</option>
-            </select>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <input
-            type="checkbox"
-            name="is_premium"
-            checked={form.is_premium}
-            onChange={handleChange}
-          />
-          <span className="text-sm">Premium Quiz</span>
-        </div>
-
-        <button className="px-4 py-2 bg-blue-600 text-white rounded">
-          Create & Continue
+        <button type="submit" className="px-6 py-2 bg-blue-600 text-white rounded">
+          Submit Quiz
         </button>
       </form>
     </div>

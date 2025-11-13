@@ -36,16 +36,22 @@ function QuizTakingGamified() {
       return data;
     },
     onSuccess: (data) => {
-      // show coin burst and level up if any
       if (data.thalers_earned) setShowCoin(data.thalers_earned);
       if (data.xp_earned) setLevelXp(data.xp_earned);
       if (data.thalers_earned) setThalerToast(data.thalers_earned);
+
       qc.invalidateQueries({ queryKey: ["me"] });
+
+      // Delay so animations show before redirect
+      setTimeout(() => {
+        window.location.href = "/dashboard";
+      }, 2000);
     },
+
     onError: () => alert("Submit failed"),
   });
 
-  useEffect(()=>{ setSelected(null); }, [index]);
+  useEffect(() => { setSelected(null); }, [index]);
 
   if (loading) return <div className="p-6">Loading...</div>;
   if (!quiz) return null;
@@ -66,7 +72,7 @@ function QuizTakingGamified() {
     setIndex((i) => i + 1);
   };
 
-  const prev = () => setIndex((i) => Math.max(0, i-1));
+  const prev = () => setIndex((i) => Math.max(0, i - 1));
 
   // layout: avatar background + podium image + q top + 4 answers in 2x2 grid
   return (
@@ -80,25 +86,24 @@ function QuizTakingGamified() {
         {/* podium */}
         <div className="flex items-center justify-center mb-6">
           <div className="bg-white p-6 rounded-2xl shadow-xl w-full">
-            <div className="text-sm text-gray-500 mb-3">Question {index+1} / {quiz.questions.length}</div>
+            <div className="text-sm text-gray-500 mb-3">Question {index + 1} / {quiz.questions.length}</div>
             <h3 className="text-2xl font-semibold mb-4">{q.text}</h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {q.options.map(opt => (
-                <button key={opt.id} onClick={()=>handlePick(opt.id)}
-                  className={`p-4 rounded-lg border text-left transition transform ${
-                    selected === opt.id ? "border-yellow-500 bg-yellow-50 scale-102" : "border-gray-200 hover:scale-101"
-                  }`}>
+                <button key={opt.id} onClick={() => handlePick(opt.id)}
+                  className={`p-4 rounded-lg border text-left transition transform ${selected === opt.id ? "border-yellow-500 bg-yellow-50 scale-102" : "border-gray-200 hover:scale-101"
+                    }`}>
                   {opt.text}
                 </button>
               ))}
             </div>
 
             <div className="mt-6 flex justify-between items-center">
-              <button onClick={prev} disabled={index===0} className="px-4 py-2 border rounded disabled:opacity-50">Previous</button>
+              <button onClick={prev} disabled={index === 0} className="px-4 py-2 border rounded disabled:opacity-50">Previous</button>
               <div className="flex items-center gap-3">
                 <div className="text-sm text-gray-600">Difficulty: {quiz.difficulty}</div>
-                <button onClick={next} className="px-6 py-2 bg-blue-600 text-white rounded">{index === quiz.questions.length-1 ? "Finish" : "Next"}</button>
+                <button onClick={next} className="px-6 py-2 bg-blue-600 text-white rounded">{index === quiz.questions.length - 1 ? "Finish" : "Next"}</button>
               </div>
             </div>
           </div>
@@ -107,13 +112,13 @@ function QuizTakingGamified() {
       </div>
 
       {/* Coin burst */}
-      <CoinBurst amount={showCoin} onDone={()=>setShowCoin(0)} />
+      <CoinBurst amount={showCoin} onDone={() => setShowCoin(0)} />
 
       {/* Thaler toast */}
-      <ThalerToast amount={thalerToast} onClose={()=>setThalerToast(null)} />
+      <ThalerToast amount={thalerToast} onClose={() => setThalerToast(null)} />
 
       {/* Level up */}
-      <LevelUpModal open={!!levelXp} xp={levelXp} onClose={()=>setLevelXp(null)} />
+      <LevelUpModal open={!!levelXp} xp={levelXp} onClose={() => setLevelXp(null)} />
     </div>
   );
 }

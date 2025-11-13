@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
 
 function Dashboard() {
   const recentQuizzes = [
@@ -23,10 +24,13 @@ function Dashboard() {
     "Introduction to Chemistry",
   ];
 
+   const { user } = useAuth();
+
   return (
     <div className="max-w-6xl mx-auto px-6 py-10">
       {/* Header */}
-      <h2 className="text-3xl font-bold mb-8">Welcome, Alex Johnson!</h2>
+      
+      <h2 className="text-3xl font-bold mb-8">Welcome, {user?.username}</h2>
 
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Left Column - Profile */}
@@ -36,7 +40,7 @@ function Dashboard() {
             alt="avatar"
             className="w-24 h-24 rounded-full mb-4"
           />
-          <h3 className="text-lg font-semibold">Alex Johnson</h3>
+          <h3 className="text-lg font-semibold">{user?.username}</h3>
           <p className="text-gray-500 text-sm">Level 7 Learner</p>
 
           <div className="mt-4 w-full">
@@ -62,7 +66,7 @@ function Dashboard() {
           <h4 className="font-semibold text-gray-800 mb-4">Ready to Learn?</h4>
           <div className="flex flex-wrap gap-4 mb-8">
             <Link
-              to="/quizzes/start"
+              to="/quizzes/"
               className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
             >
               Start New Quiz
