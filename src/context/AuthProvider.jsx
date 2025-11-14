@@ -1,103 +1,70 @@
-import React, { useState } from "react";
-import { useAuth } from "../hooks/useAuth";
-import { useNavigate, Link } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import AuthContext from "./authContextObject";
+import api from "../lib/api";
 
-function Login() {
-  const { login } = useAuth();
-  const navigate = useNavigate();
+const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
+  const [loadingUser, setLoadingUser] = useState(true);
 
-  const [form, setForm] = useState({ email: "", password: "" });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+  // ⬇ Load user from backend
+  const loadUser = async () => {
+    try {
+      const { data } = await api.get("/auth/me/");
+      setUser(data);
+    } catch (err) {
+      setUser(null);
+    } finally {
+      setLoadingUser(false);
+    }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
+  // Load user on first mount
+  useEffect(() => {
+    loadUser();
+  }, []);
 
-    try {
-      await login(form.email, form.password);
-      navigate("/dashboard");
-    } catch (err) {
-      const msg =
-        err.response?.data?.detail ||
-        err.response?.data?.error ||
-        "Invalid email or password";
-      setError(msg);
-    }
+  // ⬇ Login
+  const login = async (email, password) => {
+    const res = await api.post("/auth/login/", { email, password });
 
-    setLoading(false);
+    localStorage.setItem("access", res.data.access);
+    localStorage.setItem("refresh", res.data.refresh);
+
+    await loadUser();
+  };
+
+  // ⬇ Register
+  const register = async (payload) => {
+    const res = await api.post("/auth/register/", payload);
+
+    localStorage.setItem("access", res.data.access);
+    localStorage.setItem("refresh", res.data.refresh);
+
+    await loadUser();
+  };
+
+  // ⬇ Logout
+  const logout = () => {
+    localStorage.removeItem("access");
+    localStorage.removeItem("refresh");
+    setUser(null);
+  };
+
+  // Context value
+  const value = {
+    user,
+    loadingUser,
+    login,
+    register,
+    logout,
+    refreshUser: loadUser,
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50 px-4">
-      <div className="bg-white shadow-md rounded-xl w-full max-w-md p-8 border border-gray-100">
-        <h2 className="text-2xl font-bold text-center mb-2 text-gray-800">
-          Welcome Back
-        </h2>
-        <p className="text-sm text-gray-500 text-center mb-8">
-          Log in to continue your BrainFuel journey
-        </p>
-
-        {error && (
-          <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm mb-4">
-            {error}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="text-sm font-medium text-gray-600">Email</label>
-            <input
-              type="email"
-              name="email"
-              required
-              onChange={handleChange}
-              value={form.email}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="you@example.com"
-            />
-          </div>
-
-          <div>
-            <label className="text-sm font-medium text-gray-600">Password</label>
-            <input
-              type="password"
-              name="password"
-              required
-              onChange={handleChange}
-              value={form.password}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="••••••••"
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className={`w-full py-2 rounded-md text-white font-medium transition ${
-              loading
-                ? "bg-blue-400 cursor-not-allowed"
-                : "bg-blue-600 hover:bg-blue-700"
-            }`}
-          >
-            {loading ? "Logging in..." : "Login"}
-          </button>
-        </form>
-
-        <p className="text-center text-sm text-gray-500 mt-6">
-          Don't have an account?{" "}
-          <Link to="/register" className="text-blue-600 hover:underline">
-            Sign up
-          </Link>
-        </p>
-      </div>
-    </div>
+    <AuthContext.Provider value={value}>
+      {!loadingUser ? children : <div className="p-6">Loading...</div>}
+    </AuthContext.Provider>
   );
-}
+};
 
-export default Login;
+export default AuthProvider;

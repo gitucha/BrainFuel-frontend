@@ -1,136 +1,113 @@
 import React from "react";
-import { Link } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
+import { Link } from "react-router-dom";
 
-function Dashboard() {
-  const recentQuizzes = [
-    { title: "Algebra Fundamentals", progress: "85%", time: "2 days ago" },
-    { title: "World History: Ancient Civilizations", progress: "92%", time: "4 days ago" },
-    { title: "Introduction to Physics", progress: "78%", time: "6 days ago" },
-    { title: "Literary Devices", progress: "88%", time: "1 week ago" },
-  ];
-
-  const topPlayers = [
-    { name: "Emma", xp: 13500 },
-    { name: "Liam", xp: 12000 },
-    { name: "Olivia", xp: 11800 },
-    { name: "Noah", xp: 11500 },
-  ];
-
-  const challenges = [
-    "Advanced Calculus",
-    "Renaissance Art",
-    "Cybersecurity Basics",
-    "Introduction to Chemistry",
-  ];
-
-   const { user } = useAuth();
+export default function Dashboard() {
+  const { user } = useAuth();
 
   return (
-    <div className="max-w-6xl mx-auto px-6 py-10">
-      {/* Header */}
-      
-      <h2 className="text-3xl font-bold mb-8">Welcome, {user?.username}</h2>
+    <div className="p-6 max-w-7xl mx-auto">
 
-      <div className="grid lg:grid-cols-3 gap-6">
-        {/* Left Column - Profile */}
-        <div className="col-span-1 bg-white rounded-xl p-6 shadow-sm flex flex-col items-center">
-          <img
-            src="https://via.placeholder.com/100"
-            alt="avatar"
-            className="w-24 h-24 rounded-full mb-4"
-          />
-          <h3 className="text-lg font-semibold">{user?.username}</h3>
-          <p className="text-gray-500 text-sm">Level 7 Learner</p>
+      {/* Page Title */}
+      <h1 className="text-xl font-semibold mb-6">User Dashboard</h1>
 
-          <div className="mt-4 w-full">
-            <div className="flex justify-between text-sm mb-1">
-              <span className="text-gray-600">XP Progress</span>
-              <span className="font-semibold">1350 / 2000</span>
-            </div>
-            <div className="w-full h-2 bg-gray-100 rounded-full">
-              <div className="h-2 bg-blue-600 w-[67%] rounded-full"></div>
-            </div>
-          </div>
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
 
-          <Link
-            to="/profile"
-            className="mt-5 inline-block px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
-          >
-            View Profile
-          </Link>
-        </div>
+        {/* LEFT SIDEBAR – SAME AS YOUR ORIGINAL UI */}
+        <aside className="lg:col-span-1 bg-white p-6 rounded-xl shadow-sm">
+          <nav className="flex flex-col gap-4 text-gray-600">
+            <Link to="/dashboard" className="hover:text-blue-600">Dashboard</Link>
+            <Link to="/my-quizzes" className="hover:text-blue-600">My Quizzes</Link>
+            <Link to="/create-quiz" className="hover:text-blue-600">Create Quiz</Link>
+            <Link to="/settings" className="hover:text-blue-600">Settings</Link>
+          </nav>
+        </aside>
 
-        {/* Center - Ready to Learn */}
-        <div className="col-span-2 bg-white rounded-xl p-6 shadow-sm">
-          <h4 className="font-semibold text-gray-800 mb-4">Ready to Learn?</h4>
-          <div className="flex flex-wrap gap-4 mb-8">
-            <Link
-              to="/quizzes/"
-              className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-            >
-              Start New Quiz
-            </Link>
-            <Link
-              to="/quizzes/create"
-              className="px-6 py-2 border border-blue-600 text-blue-600 rounded-md hover:bg-blue-50"
-            >
-              Create Quiz
-            </Link>
-          </div>
+        {/* MAIN AREA */}
+        <main className="lg:col-span-3 flex flex-col gap-6">
 
-          {/* Recent Quizzes */}
-          <h4 className="font-semibold mb-3">Recent Quizzes</h4>
-          <div className="space-y-3 mb-8">
-            {recentQuizzes.map((q, i) => (
-              <div
-                key={i}
-                className="border rounded-lg p-4 flex justify-between items-center hover:shadow-sm transition"
-              >
-                <div>
-                  <p className="font-medium text-gray-800">{q.title}</p>
-                  <p className="text-xs text-gray-500">{q.time}</p>
+          {/* TOP WELCOME / USER CARD */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+            {/* USER CARD */}
+            <div className="bg-white p-6 rounded-xl shadow-sm md:col-span-1">
+              <div className="flex flex-col items-center text-center">
+                <img
+                  src={user?.profile_picture || "/assets/default-avatar.png"}
+                  className="w-20 h-20 rounded-full object-cover mb-4"
+                  alt="avatar"
+                />
+                <h2 className="text-xl font-semibold">{user?.username}</h2>
+
+                <div className="mt-4 text-sm text-gray-500">
+                  <p>XP Progress</p>
+                  <p className="font-semibold">{user?.xp} / {user?.level * 100}</p>
                 </div>
-                <span className="text-blue-600 font-semibold">{q.progress}</span>
-              </div>
-            ))}
-          </div>
 
-          {/* Top Players */}
-          <h4 className="font-semibold mb-3">Top Players</h4>
-          <div className="space-y-2">
-            {topPlayers.map((p, i) => (
-              <div key={i} className="flex justify-between text-sm border-b py-1">
-                <span>{p.name}</span>
-                <span className="text-blue-600 font-semibold">{p.xp} XP</span>
-              </div>
-            ))}
-            <Link to="/leaderboard" className="text-blue-600 text-sm mt-3 inline-block hover:underline">
-              View Full Leaderboard →
-            </Link>
-          </div>
-        </div>
-      </div>
+                <div className="mt-2 text-sm text-gray-500">
+                  <p>Level</p>
+                  <p className="font-semibold">{user?.level}</p>
+                </div>
 
-      {/* Challenges Section */}
-      <div className="mt-10">
-        <h4 className="font-semibold mb-3">New Challenges Await</h4>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {challenges.map((c, i) => (
-            <div
-              key={i}
-              className="bg-white border rounded-lg p-5 text-center shadow-sm hover:shadow-md transition"
-            >
-              <p className="font-medium text-gray-700">{c}</p>
-              <button className="mt-3 px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700">
-                Take Quiz
-              </button>
+                <div className="mt-2 text-sm text-gray-500">
+                  <p>Thalers</p>
+                  <p className="font-semibold">{user?.thalers}</p>
+                </div>
+
+                <Link
+                  to="/categories"
+                  className="px-4 py-2 rounded bg-blue-600 text-white shadow hover:bg-blue-700"
+                >
+                  Browse Categories
+                </Link>
+
+              </div>
             </div>
-          ))}
-        </div>
+
+            {/* START QUIZ BOX */}
+            <div className="bg-blue-50 p-6 rounded-xl shadow-sm md:col-span-2 flex flex-col justify-between">
+              <h3 className="text-lg font-semibold">Ready to Learn?</h3>
+
+              <div className="flex gap-4 mt-6">
+                <Link
+                  to="/quizzes"
+                  className="flex-1 py-3 text-center bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
+                  Start New Quiz
+                </Link>
+
+                <Link
+                  to="/create-quiz"
+                  className="flex-1 py-3 text-center border rounded-lg bg-white hover:bg-gray-50"
+                >
+                  Create Quiz
+                </Link>
+              </div>
+            </div>
+          </div>
+
+          {/* RECENT QUIZZES + TOP PLAYERS */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Recent Quizzes */}
+            <div className="bg-white p-6 rounded-xl shadow-sm md:col-span-2">
+              <h3 className="font-semibold mb-4">Recent Quizzes</h3>
+              <p className="text-gray-500 text-sm">Feature pending — backend hookup next.</p>
+            </div>
+
+            {/* Top Players */}
+            <div className="bg-white p-6 rounded-xl shadow-sm">
+              <h3 className="font-semibold mb-4">Top Players</h3>
+              <p className="text-gray-500 text-sm">Leaderboard coming after this.</p>
+            </div>
+          </div>
+
+          {/* NEW CHALLENGES */}
+          <div className="bg-white p-6 rounded-xl shadow-sm">
+            <h3 className="font-semibold mb-4">New Challenges Await!</h3>
+            <p className="text-gray-500 text-sm">We plug actual quizzes here next.</p>
+          </div>
+        </main>
       </div>
     </div>
   );
 }
-
-export default Dashboard;

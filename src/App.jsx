@@ -22,6 +22,10 @@ import Shop from "./pages/Shop";
 import Minigames from "./pages/Minigames";
 import Notifications from "./pages/Notifications";
 import QuizMultiplayer from "./pages/QuizMultiplayer";
+import CategoryList from "./pages/CategoryList";
+import CategoryQuizzes from "./pages/CategoryQuizzes";
+import DifficultySelection from "./pages/DifficultySelection";
+
 
 function App() {
   return (
@@ -48,6 +52,21 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+              <Route
+                path="/categories"
+                element={<ProtectedRoute><CategoryList /></ProtectedRoute>}
+              />
+
+              <Route
+                path="/categories/:name"
+                element={<ProtectedRoute><DifficultySelection /></ProtectedRoute>}
+              />
+
+              <Route
+                path="/categories/:name/:difficulty"
+                element={<ProtectedRoute><CategoryQuizzes /></ProtectedRoute>}
+              />
+
 
               <Route
                 path="/quizzes/:id"

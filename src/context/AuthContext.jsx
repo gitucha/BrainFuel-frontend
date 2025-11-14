@@ -1,8 +1,8 @@
 // /src/context/AuthContext.jsx
-import React, { createContext, useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
+import AuthContext from "./authContextObject";
 import api from "../lib/api";
-
-export const AuthContext = createContext(null);
+import { useRef } from "react";
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -27,7 +27,7 @@ export const AuthProvider = ({ children }) => {
     if (mountedRef.current) return;
     mountedRef.current = true;
     loadUser();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, []);
 
   const login = async (email, password) => {

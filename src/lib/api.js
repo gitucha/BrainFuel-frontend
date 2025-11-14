@@ -2,47 +2,63 @@ import axios from "axios";
 
 const api = axios.create({
   baseURL: "http://127.0.0.1:8000/api",
+  withCredentials: false,
 });
 
-// Attach JWT token before each request
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("access");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
+// Attach access token
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("access");
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
 
-// Handle token refresh on 401
+// Auto-refresh tokens
+let refreshing = false;
+let queue = [];
+
 api.interceptors.response.use(
-  (response) => response,
+  (res) => res,
   async (error) => {
-    if (
-      error.response?.status === 401 &&
-      !error.config._retry &&
-      localStorage.getItem("refresh")
-    ) {
-      error.config._retry = true;
+    const original = error.config;
 
-      try {
-        const refreshResponse = await axios.post(
-          "http://127.0.0.1:8000/api/auth/token/refresh/",
-          { refresh: localStorage.getItem("refresh") }
-        );
+    if (error.response?.status === 401 && !original._retry) {
+      original._retry = true;
 
-        localStorage.setItem("access", refreshResponse.data.access);
+      // Avoid multiple refresh calls
+      if (!refreshing) {
+        refreshing = true;
 
-        error.config.headers.Authorization = `Bearer ${refreshResponse.data.access}`;
+        try {
+          const refresh = localStorage.getItem("refresh");
+          const res = await axios.post("http://127.0.0.1:8000/api/auth/refresh/", {
+            refresh,
+          });
 
-        return api(error.config);
-      } catch (refreshError) {
-        localStorage.clear();
-        window.location.href = "/login";
-        refreshError.config = error.config;
+          localStorage.setItem("access", res.data.access);
+
+          queue.forEach((cb) => cb(res.data.access));
+          queue = [];
+
+          refreshing = false;
+
+          original.headers.Authorization = `Bearer ${res.data.access}`;
+          return api(original);
+        } catch (err) {
+          refreshing = false;
+          queue = [];
+          localStorage.removeItem("access");
+          localStorage.removeItem("refresh");
+          window.location.href = "/login";
+          return Promise.reject(err);
+        }
       }
+
+      return new Promise((resolve) => {
+        queue.push((newToken) => {
+          original.headers.Authorization = `Bearer ${newToken}`;
+          resolve(api(original));
+        });
+      });
     }
 
     return Promise.reject(error);

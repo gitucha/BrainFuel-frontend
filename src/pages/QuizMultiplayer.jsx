@@ -1,178 +1,148 @@
-import React, { useEffect, useState, useRef } from "react";
-import { useParams } from "react-router-dom";
-import { createQuizSocket } from "../lib/multiplayer";
+import React, { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import useQuizSocket from "../hooks/useQuizSocket";
+import api from "../lib/api";
 
-function LiveRanking({ ranking }) {
-  return (
-    <aside className="w-80 bg-white rounded-lg shadow-sm p-4 sticky top-20 h-[70vh] overflow-auto">
-      <h4 className="font-semibold mb-3">Live Rankings</h4>
-      <ul className="space-y-2">
-        {ranking.map((p, i) => (
-          <li key={p.user_id || i} className="flex justify-between items-center">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 font-semibold">
-                {i + 1}
-              </div>
-              <div>
-                <div className="text-sm font-medium">{p.username}</div>
-                <div className="text-xs text-gray-500">{p.status}</div>
-              </div>
-            </div>
-            <div className="font-semibold text-blue-600">{p.score}</div>
-          </li>
-        ))}
-      </ul>
-    </aside>
-  );
-}
-
-export default function QuizMultiplayer() {
+const QuizMultiplayer = () => {
   const { roomId } = useParams();
-  const [ranking, setRanking] = useState([]);
-  const [question, setQuestion] = useState(null);
-  const [selectedIdx, setSelectedIdx] = useState(null);
-  const [statusMsg, setStatusMsg] = useState("Connecting...");
-  const [connectionStatus, setConnectionStatus] = useState("connecting"); // connecting, connected, disconnected
-  const wsRef = useRef(null);
+  const navigate = useNavigate();
+  const [players, setPlayers] = useState({}); // {username: score}
+  const [messages, setMessages] = useState([]);
+  const [quiz, setQuiz] = useState(null);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [selected, setSelected] = useState(null);
 
-  // reusable connect logic
-  const connectSocket = () => {
-    setConnectionStatus("connecting");
-    setStatusMsg("Reconnecting...");
-
-    const socket = createQuizSocket(
-      roomId,
-      (msg) => {
-        switch (msg.type) {
-          case "ranking":
-            setRanking(msg.payload);
-            break;
-          case "question":
-            setQuestion(msg.payload);
-            setSelectedIdx(null);
-            break;
-          case "info":
-            setStatusMsg(msg.payload?.message || "Update received");
-            break;
-          default:
-            console.warn("Unknown WS message", msg);
-        }
-      },
-      () => {
-        setStatusMsg("Connected");
-        setConnectionStatus("connected");
-      },
-      () => {
-        setStatusMsg("Disconnected");
-        setConnectionStatus("disconnected");
-      }
-    );
-
-    wsRef.current = socket;
+  // handlers for websocket events
+  const handlers = {
+    joined: (data) => {
+      setMessages((m) => [...m, { system: true, text: `${data.username} joined room ${data.room}` }]);
+    },
+    user_joined: (data) => {
+      const u = data.user;
+      setPlayers((p) => ({ ...p, [u]: p[u] || 0 }));
+      setMessages((m) => [...m, { system: true, text: `${u} joined` }]);
+    },
+    answer_broadcast: (data) => {
+      const u = data.user;
+      const delta = data.score_delta || 10; // default 10
+      setPlayers((p) => ({ ...p, [u]: (p[u] || 0) + delta }));
+      setMessages((m) => [...m, { system: false, text: `${u} answered Q${data.question_id}` }]);
+    },
   };
 
-  // first connection
+  const { send, connected } = useQuizSocket(roomId, handlers);
+
   useEffect(() => {
-    if (!roomId) return;
-    connectSocket();
-    return () => {
-      wsRef.current?.close();
-      setConnectionStatus("disconnected");
-    };
-  }, [roomId]);
+    // load quiz for the room if you have endpoint mapping; else demo load first approved quiz
+    (async () => {
+      try {
+        const { data } = await api.get(`/quizzes/?limit=1`); // get first quiz (adjust as needed)
+        if (data.results && data.results.length) setQuiz(data.results[0]);
+      } catch (err) {
+        console.error("Failed load quiz", err);
+      }
+    })();
+  }, []);
 
-  const sendAnswer = (questionId, answerIndex) => {
-    const socket = wsRef.current;
-    if (!socket || socket.readyState !== WebSocket.OPEN) {
-      alert("Connection lost. Please reconnect.");
-      return;
-    }
-
-    const message = {
+  const handleAnswer = (optionId) => {
+    if (!quiz) return;
+    const q = quiz.questions ? quiz.questions[currentQuestionIndex] : null;
+    const payload = {
       type: "answer",
-      payload: { question_id: questionId, selected_index: answerIndex },
+      room: roomId,
+      question_id: q ? q.id : currentQuestionIndex,
+      option_id: optionId,
+      score_delta: 10,
     };
-    socket.send(JSON.stringify(message));
-    setSelectedIdx(answerIndex);
-  };
-
-  // determine dot color / animation
-  const connectionClasses = {
-    connected: "bg-green-500",
-    disconnected: "bg-red-500",
-    connecting: "bg-gray-400 animate-pulse",
+    send(payload);
+    setSelected(optionId);
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-8 flex gap-6">
-      <div className="flex-1">
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              {/* Connection indicator */}
-              <div
-                className={`w-3 h-3 rounded-full transition-all duration-300 ${connectionClasses[connectionStatus]}`}
-                title={`Status: ${connectionStatus}`}
-              />
-              <div>
-                <h3 className="text-xl font-semibold">Live Multiplayer</h3>
-                <p className="text-sm text-gray-500">
-                  Room: {roomId} • {statusMsg}
-                </p>
-              </div>
-            </div>
+    <div className="max-w-6xl mx-auto p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="md:col-span-2">
+        <div className="bg-white p-6 rounded shadow">
+          <h2 className="text-xl font-semibold mb-4">Multiplayer Room: {roomId}</h2>
+          <div className="mb-4 text-sm text-gray-500">Status: {connected ? "Connected" : "Connecting..."}</div>
 
-            <div className="flex items-center gap-3">
-              <div className="text-sm text-gray-500">
-                Players: {ranking.length}
-              </div>
+          {!quiz && <div>Loading quiz for room...</div>}
 
-              {connectionStatus === "disconnected" && (
-                <button
-                  onClick={connectSocket}
-                  className="text-sm px-3 py-1 border border-blue-600 text-blue-600 rounded hover:bg-blue-50"
-                >
-                  Reconnect
-                </button>
-              )}
-            </div>
-          </div>
-
-          {question ? (
+          {quiz && (
             <>
-              <div className="mb-6">
-                <div className="text-lg font-semibold">{question.text}</div>
+              <div className="mb-4">
+                <div className="text-sm text-gray-500">Question {currentQuestionIndex + 1}</div>
+                <h3 className="text-lg font-bold">{quiz.questions[currentQuestionIndex].text}</h3>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {question.options.map((opt, idx) => {
-                  const isSelected = selectedIdx === idx;
-                  return (
-                    <button
-                      key={idx}
-                      onClick={() => sendAnswer(question.id, idx)}
-                      disabled={selectedIdx !== null}
-                      className={`p-4 rounded-lg border text-left transition ${
-                        isSelected
-                          ? "bg-blue-50 border-blue-400"
-                          : "border-gray-200 hover:border-blue-200"
-                      }`}
-                    >
-                      <div className="font-medium">{opt}</div>
-                    </button>
-                  );
-                })}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {quiz.questions[currentQuestionIndex].options.map((opt) => (
+                  <button
+                    key={opt.id}
+                    onClick={() => handleAnswer(opt.id)}
+                    className={`p-3 rounded border text-left ${
+                      selected === opt.id ? "bg-yellow-100 border-yellow-500" : "bg-gray-50"
+                    }`}
+                  >
+                    {opt.text}
+                  </button>
+                ))}
+              </div>
+
+              <div className="mt-4 flex gap-3">
+                <button
+                  onClick={() => setCurrentQuestionIndex((i) => Math.max(0, i - 1))}
+                  className="px-3 py-2 border rounded"
+                >
+                  Prev
+                </button>
+                <button
+                  onClick={() => setCurrentQuestionIndex((i) => Math.min(quiz.questions.length - 1, i + 1))}
+                  className="px-3 py-2 bg-blue-600 text-white rounded"
+                >
+                  Next
+                </button>
+                <button onClick={() => navigate("/dashboard")} className="px-3 py-2 border rounded">
+                  Exit
+                </button>
               </div>
             </>
-          ) : (
-            <div className="text-center py-16 text-gray-500">
-              Waiting for the next question…
-            </div>
           )}
+        </div>
+
+        <div className="mt-6 bg-white p-4 rounded shadow">
+          <h4 className="font-semibold mb-2">Live Activity</h4>
+          <div className="space-y-2 max-h-48 overflow-auto">
+            {messages.map((m, i) => (
+              <div key={i} className={`${m.system ? "text-gray-500 text-sm" : ""}`}>{m.text}</div>
+            ))}
+          </div>
         </div>
       </div>
 
-      <LiveRanking ranking={ranking} />
+      <aside>
+        <div className="bg-white p-4 rounded shadow mb-4">
+          <h4 className="font-semibold mb-2">Players</h4>
+          <div className="space-y-2">
+            {Object.entries(players).length === 0 && <div className="text-gray-500">No players yet</div>}
+            {Object.entries(players).map(([u, s]) => (
+              <div key={u} className="flex justify-between">
+                <div>{u}</div>
+                <div className="font-semibold">{s}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="bg-white p-4 rounded shadow">
+          <h4 className="font-semibold mb-2">Room Controls</h4>
+          <div className="flex flex-col gap-2">
+            <button onClick={() => send({ type: "join", room: roomId, username: localStorage.getItem("username") || "Guest" })} className="px-3 py-2 bg-green-600 text-white rounded">Join Room</button>
+            <button onClick={() => send({ type: "leave", room: roomId })} className="px-3 py-2 border rounded">Leave Room</button>
+          </div>
+        </div>
+      </aside>
     </div>
   );
-}
+};
+
+export default QuizMultiplayer;
