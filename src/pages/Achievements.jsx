@@ -1,4 +1,6 @@
 import React from "react";
+import { Link } from "react-router-dom";
+import Dashboard from "./Dashboard";
 
 function Achievements() {
   const badges = [
@@ -15,15 +17,15 @@ function Achievements() {
       {/* Overview */}
       <div className="flex justify-around mb-12 text-center">
         <div>
-          <p className="text-4xl font-bold text-blue-600">25</p>
+          <p className="text-4xl font-bold text-blue-600">0</p>
           <p className="text-sm text-gray-500">Badges Earned</p>
         </div>
         <div>
-          <p className="text-4xl font-bold text-blue-600">12,500</p>
+          <p className="text-4xl font-bold text-blue-600">500</p>
           <p className="text-sm text-gray-500">Total XP</p>
         </div>
         <div>
-          <p className="text-4xl font-bold text-blue-600">12</p>
+          <p className="text-4xl font-bold text-blue-600">1</p>
           <p className="text-sm text-gray-500">Current Level</p>
         </div>
       </div>
@@ -76,9 +78,11 @@ function Achievements() {
           <p className="text-sm text-gray-600">
             Achieve ultimate mastery and become a true BrainFuel Grand Master!
           </p>
-          <button className="mt-3 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+          <Link to={Dashboard} >
+          <button className="mt-3 px-4  py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
             View Your Progress
           </button>
+          </Link>
         </div>
       </div>
     </div>

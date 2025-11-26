@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 
+
 function HomePage() {
   return (
     <div className="bg-gray-50">
@@ -37,7 +38,8 @@ function HomePage() {
             <div className="bg-white p-8 rounded-xl shadow-md w-full max-w-md mx-auto">
               {/* Illustration placeholder — replace with <img /> if you have asset */}
               <div className="h-56 rounded bg-linear-to-br from-white to-blue-50 flex items-center justify-center text-blue-400 font-semibold">
-                Illustration
+               <img src="/assets/download(10).jpeg"  />
+               <p>We Make It Work</p>
               </div>
             </div>
           </div>

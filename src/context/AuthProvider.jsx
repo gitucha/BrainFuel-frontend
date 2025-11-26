@@ -2,13 +2,19 @@ import React, { useState, useEffect } from "react";
 import AuthContext from "./authContextObject";
 import api from "../lib/api";
 
-const AuthProvider = ({ children }) => {
+export default function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loadingUser, setLoadingUser] = useState(true);
 
-  // ⬇ Load user from backend
   const loadUser = async () => {
     try {
+      const access = localStorage.getItem("access");
+      if (!access) {
+        setUser(null);
+        setLoadingUser(false);
+        return;
+      }
+
       const { data } = await api.get("/auth/me/");
       setUser(data);
     } catch (err) {
@@ -18,53 +24,56 @@ const AuthProvider = ({ children }) => {
     }
   };
 
-  // Load user on first mount
   useEffect(() => {
     loadUser();
   }, []);
 
-  // ⬇ Login
   const login = async (email, password) => {
-    const res = await api.post("/auth/login/", { email, password });
-
-    localStorage.setItem("access", res.data.access);
-    localStorage.setItem("refresh", res.data.refresh);
-
-    await loadUser();
+    setLoadingUser(true);
+    try {
+      const res = await api.post("/auth/login/", { email, password });
+      localStorage.setItem("access", res.data.access);
+      localStorage.setItem("refresh", res.data.refresh);
+      await loadUser();
+    } catch (err) {
+      setUser(null);
+      setLoadingUser(false);
+      throw err;
+    }
   };
 
-  // ⬇ Register
   const register = async (payload) => {
-    const res = await api.post("/auth/register/", payload);
-
-    localStorage.setItem("access", res.data.access);
-    localStorage.setItem("refresh", res.data.refresh);
-
-    await loadUser();
+    setLoadingUser(true);
+    try {
+      const res = await api.post("/auth/register/", payload);
+      localStorage.setItem("access", res.data.access);
+      localStorage.setItem("refresh", res.data.refresh);
+      await loadUser();
+    } catch (err) {
+      setUser(null);
+      setLoadingUser(false);
+      throw err;
+    }
   };
 
-  // ⬇ Logout
   const logout = () => {
     localStorage.removeItem("access");
     localStorage.removeItem("refresh");
     setUser(null);
   };
 
-  // Context value
-  const value = {
-    user,
-    loadingUser,
-    login,
-    register,
-    logout,
-    refreshUser: loadUser,
-  };
-
   return (
-    <AuthContext.Provider value={value}>
-      {!loadingUser ? children : <div className="p-6">Loading...</div>}
+    <AuthContext.Provider
+      value={{
+        user,
+        loadingUser,
+        login,
+        register,
+        logout,
+        refreshUser: loadUser,
+      }}
+    >
+      {loadingUser ? <div>Loading...</div> : children}
     </AuthContext.Provider>
   );
-};
-
-export default AuthProvider;
+}

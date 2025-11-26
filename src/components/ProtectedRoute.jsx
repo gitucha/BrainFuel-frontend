@@ -16,7 +16,7 @@ const isAuthenticated = () => {
   }
 };
 
-function ProtectedRoute({ children }) {
+function ProtectedRoute({ children , adminOnly = false }) {
   const { user, loading } = useAuth();
 
   if (loading) {
@@ -32,6 +32,10 @@ function ProtectedRoute({ children }) {
 
   if (!authenticated) {
     return <Navigate to="/login" replace />;
+  }
+
+  if (adminOnly && !user.is_staff) {
+    return <Navigate to="/dashboard" replace />;
   }
 
   return children;

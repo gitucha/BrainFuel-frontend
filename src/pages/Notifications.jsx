@@ -1,73 +1,113 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
-function Notifications() {
-  const tabs = ["All", "Quizzes", "Rewards", "Challenges", "System"];
-  const [activeTab, setActiveTab] = useState("All");
+export default function Notifications() {
+  const STORAGE_KEY = "brainfuel_notifications";
 
-  const notifications = [
-    { type: "Quiz", msg: 'You completed "Mechanical Basics Quiz"!', time: "1 hour ago" },
-    { type: "Reward", msg: "You unlocked the 'Streak Starter' achievement!", time: "2 hours ago" },
-    { type: "Challenge", msg: "Player Two challenged you to 'History Master'!", time: "1 day ago" },
-    { type: "System", msg: "New feature update — try Minigames today!", time: "3 days ago" },
-    { type: "Reward", msg: "You earned +200 XP for completing a quiz!", time: "4 days ago" },
+  const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Default static notifications (shown only when user has none saved)
+  const defaultNotifications = [
+    {
+      id: 1,
+      title: "Welcome to BrainFuel!",
+      message: "Your learning journey begins now.",
+      is_read: false,
+      created_at: new Date().toISOString(),
+    },
+    {
+      id: 2,
+      title: "Daily Challenge Ready",
+      message: "Your new daily quiz challenge is available!",
+      is_read: false,
+      created_at: new Date().toISOString(),
+    },
+    {
+      id: 3,
+      title: "Achievement Unlocked",
+      message: "You reached Level 2! Keep going.",
+      is_read: false,
+      created_at: new Date().toISOString(),
+    },
   ];
 
-  const filtered =
-    activeTab === "All"
-      ? notifications
-      : notifications.filter((n) => n.type === activeTab);
+  // Load notifications from localStorage
+  useEffect(() => {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+
+    if (saved && Array.isArray(saved)) {
+      setNotifications(saved);
+    } else {
+      setNotifications(defaultNotifications);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultNotifications));
+    }
+
+    setLoading(false);
+  }, []);
+
+  // Save back to localStorage whenever notifications change
+  useEffect(() => {
+    if (!loading) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(notifications));
+    }
+  }, [notifications, loading]);
+
+  const markAsRead = (id) => {
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, is_read: true } : n))
+    );
+  };
+
+  const dismiss = (id) => {
+    setNotifications((prev) => prev.filter((n) => n.id !== id));
+  };
+
+  if (loading) return <div className="p-6">Loading...</div>;
 
   return (
-    <div className="max-w-6xl mx-auto px-6 py-10">
-      <h2 className="text-3xl font-bold mb-8 text-center">🔔 Notification Center</h2>
+    <div className="max-w-3xl mx-auto p-6">
+      <h1 className="text-2xl font-bold mb-6">Notifications</h1>
 
-      {/* Tabs */}
-      <div className="flex flex-wrap justify-center gap-4 mb-8">
-        {tabs.map((t) => (
-          <button
-            key={t}
-            onClick={() => setActiveTab(t)}
-            className={`px-4 py-2 rounded-full text-sm font-medium transition ${
-              activeTab === t
-                ? "bg-blue-600 text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-            }`}
-          >
-            {t}
-          </button>
-        ))}
-      </div>
-
-      {/* Notifications */}
-      <div className="space-y-4">
-        {filtered.map((n, i) => (
-          <div
-            key={i}
-            className="bg-white border rounded-lg p-5 flex flex-col sm:flex-row justify-between sm:items-center shadow-sm hover:shadow-md transition"
-          >
-            <div className="flex items-center gap-4">
-              <div className="h-10 w-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 font-bold">
-                {n.type[0]}
-              </div>
+      {notifications.length === 0 ? (
+        <p className="text-gray-500">You have no notifications.</p>
+      ) : (
+        <div className="space-y-4">
+          {notifications.map((n) => (
+            <div
+              key={n.id}
+              className={`p-4 rounded-xl shadow flex justify-between items-start transition ${
+                n.is_read ? "bg-gray-100" : "bg-white"
+              }`}
+            >
               <div>
-                <p className="font-medium text-gray-800">{n.msg}</p>
-                <p className="text-xs text-gray-500">{n.time}</p>
+                <h3 className="font-semibold">{n.title}</h3>
+                <p className="text-gray-600 text-sm">{n.message}</p>
+                <small className="text-gray-400">
+                  {new Date(n.created_at).toLocaleString()}
+                </small>
+              </div>
+
+              <div className="flex flex-col items-end gap-2">
+                {!n.is_read && (
+                  <button
+                    onClick={() => markAsRead(n.id)}
+                    className="text-blue-600 hover:underline text-sm"
+                  >
+                    Mark as Read
+                  </button>
+                )}
+
+                <button
+                  onClick={() => dismiss(n.id)}
+                  className="text-red-600 hover:underline text-sm"
+                >
+                  Dismiss
+                </button>
               </div>
             </div>
-
-            <div className="flex items-center gap-3 mt-3 sm:mt-0">
-              <button className="text-sm text-blue-600 hover:underline">
-                Mark as Read
-              </button>
-              <button className="text-sm text-gray-500 hover:text-red-500">
-                Dismiss
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
-
-export default Notifications;

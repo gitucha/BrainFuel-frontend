@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import ProtectedRoute from "./components/ProtectedRoute";
-import { AuthProvider } from "./context/AuthContext";
+import AuthProvider from "./context/AuthProvider";
 
 // Pages
 import HomePage from "./pages/Homepage";
@@ -12,7 +12,7 @@ import Login from "./pages/Login";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
-import QuizTakingGamified from "./pages/QuizTakingGamified";   // ⭐ REPLACE OLD ONE
+import QuizTakingGamified from "./pages/QuizTakingGamified";
 import CreateQuiz from "./pages/CreateQuiz";
 import AdminPanel from "./pages/AdminPanel";
 import Subscription from "./pages/Subscription";
@@ -25,7 +25,7 @@ import QuizMultiplayer from "./pages/QuizMultiplayer";
 import CategoryList from "./pages/CategoryList";
 import CategoryQuizzes from "./pages/CategoryQuizzes";
 import DifficultySelection from "./pages/DifficultySelection";
-
+import PaystackCallback from "./pages/PaystackCallback";
 
 function App() {
   return (
@@ -42,6 +42,8 @@ function App() {
               <Route path="/register" element={<Register />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password/:uid/:token" element={<ResetPassword />} />
+              <Route path="/payments/success" element={<PaystackCallback />} />
+
 
               {/* PROTECTED ROUTES */}
               <Route
@@ -89,7 +91,7 @@ function App() {
               <Route
                 path="/admin"
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute adminOnly={true}>
                     <AdminPanel />
                   </ProtectedRoute>
                 }

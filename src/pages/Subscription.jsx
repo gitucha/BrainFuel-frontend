@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import PaystackButton from "../components/PaystackButton";
 
+
 export default function Subscription() {
   // MUST match a real plan key
   const [selected, setSelected] = useState("warrior");
@@ -86,8 +87,8 @@ export default function Subscription() {
                 <div
                   key={planKey}
                   className={`p-4 border rounded-xl ${selected === planKey
-                      ? "border-blue-500 bg-blue-50"
-                      : "border-gray-200"
+                    ? "border-blue-500 bg-blue-50"
+                    : "border-gray-200"
                     }`}
                 >
                   <div className="flex justify-between items-center">
@@ -107,22 +108,15 @@ export default function Subscription() {
                   </div>
 
                   <div className="mt-3">
-                    {currentPlan === planKey ? (
-                      <button className="px-4 py-2 bg-blue-600 text-white rounded-lg w-full text-sm">
+                    {currentPlan === plan.id ? (
+                      <button className="px-4 py-2 bg-blue-500 text-white rounded-lg w-full text-sm cursor-default">
                         You are on this plan
                       </button>
                     ) : (
                       <PaystackButton
-                        planKey={planKey}
-                        amount={
-                          planKey === "basic"
-                            ? 0
-                            : planKey === "scholar"
-                              ? 799
-                              : planKey === "warrior"
-                                ? 1999
-                                : 3499
-                        }
+                        planKey={plan.id}
+                        amountMajor={plan.price}
+                        purpose={`subscription_${plan.id}`}
                       />
                     )}
 

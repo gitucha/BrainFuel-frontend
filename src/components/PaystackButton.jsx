@@ -1,38 +1,36 @@
 import React from "react";
+import api from "../lib/api"; // your axios instance that includes auth header
 import { useAuth } from "../hooks/useAuth";
 
-export default function PaystackButton({ planKey, amount }) {
+
+export default function PaystackButton({ planKey, amountMajor, purpose = "purchase" }) {
+  // amountMajor: number in major units (e.g., 19.99)
   const { user } = useAuth();
 
-  const createSession = async () => {
-    const res = await fetch("http://127.0.0.1:8000/api/premium/paystack/create-session/", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("access")}`,
-      },
-      body: JSON.stringify({
-        email: user.email,
-        amount,
-        plan: planKey,
-      }),
-    });
+  const handleClick = async () => {
+    try {
+      // send amount in major units (backend will convert to minor)
+      const payload = { amount: amountMajor, purpose };
+      const res = await api.post("/premium/paystack/create-session/", payload);
+      const { authorization_url, reference } = res.data;
 
-    const data = await res.json();
+      // Save reference locally so you can verify after redirect (optional)
+      localStorage.setItem("last_paystack_reference", reference);
 
-    if (data.authorization_url) {
-      window.location.href = data.authorization_url; // redirect user
-    } else {
-      alert("Payment session failed");
+      // Redirect user to Paystack checkout
+      window.location.href = authorization_url;
+    } catch (err) {
+      console.error("Create session failed", err);
+      alert("Failed to start payment. Try again.");
     }
   };
 
   return (
     <button
-      onClick={createSession}
+      onClick={handleClick}
       className="px-4 py-2 bg-green-600 text-white rounded-lg w-full text-sm"
     >
-      Buy this plan
+      Pay {amountMajor} USD
     </button>
   );
 }
