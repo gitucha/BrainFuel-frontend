@@ -4,6 +4,7 @@ import Header from "./components/Header";
 import Footer from "./components/Footer";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AuthProvider from "./context/AuthProvider";
+import { ToastProvider } from "./context/ToastContext";
 
 // Pages
 import HomePage from "./pages/Homepage";
@@ -22,148 +23,106 @@ import Shop from "./pages/Shop";
 import Minigames from "./pages/Minigames";
 import Notifications from "./pages/Notifications";
 import QuizMultiplayer from "./pages/QuizMultiplayer";
-import CategoryList from "./pages/CategoryList";
-import CategoryQuizzes from "./pages/CategoryQuizzes";
-import DifficultySelection from "./pages/DifficultySelection";
+import Categories from "./pages/Categories";
 import PaystackCallback from "./pages/PaystackCallback";
+import PaymentsSuccess from "./pages/PaymentsSuccess";
 
 function App() {
   return (
     <Router>
       <AuthProvider>
-        <div className="min-h-screen flex flex-col bg-gray-50">
-          <Header />
+        <ToastProvider>
 
-          <main className="flex-1">
-            <Routes>
-              {/* PUBLIC ROUTES */}
-              <Route path="/" element={<HomePage />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
-              <Route path="/reset-password/:uid/:token" element={<ResetPassword />} />
-              <Route path="/payments/success" element={<PaystackCallback />} />
+          {/* FULL-SCREEN GRADIENT BACKGROUND */}
+          <div className="min-h-screen w-full bg-linear-to-br from-[#c5d6e8] via-white to-[#c3ccdf]">
 
+            {/* GLASS NAVBAR */}
+            <Header />
 
-              {/* PROTECTED ROUTES */}
-              <Route
-                path="/dashboard"
-                element={
-                  <ProtectedRoute>
-                    <Dashboard />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/categories"
-                element={<ProtectedRoute><CategoryList /></ProtectedRoute>}
-              />
+            {/* CONTENT WRAPPER (FULL WIDTH, NO CONTAINER LIMITS) */}
+            <main className="pt-4 pb-10">
+              <Routes>
 
-              <Route
-                path="/categories/:name"
-                element={<ProtectedRoute><DifficultySelection /></ProtectedRoute>}
-              />
+                {/* PUBLIC ROUTES */}
+                <Route path="/" element={<HomePage />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password/:uid/:token" element={<ResetPassword />} />
 
-              <Route
-                path="/categories/:name/:difficulty"
-                element={<ProtectedRoute><CategoryQuizzes /></ProtectedRoute>}
-              />
+                {/* PAYSTACK */}
+                <Route path="/payments/verify" element={<PaystackCallback />} />
+                <Route path="/payments/success" element={<PaymentsSuccess />} />
 
+                {/* PROTECTED ROUTES */}
+                <Route
+                  path="/dashboard"
+                  element={<ProtectedRoute><Dashboard /></ProtectedRoute>}
+                />
 
-              <Route
-                path="/quizzes/:id"
-                element={
-                  <ProtectedRoute>
-                    <QuizTakingGamified />
-                  </ProtectedRoute>
-                }
-              />
+                <Route
+                  path="/categories"
+                  element={<ProtectedRoute><Categories /></ProtectedRoute>}
+                />
 
-              <Route
-                path="/create-quiz"
-                element={
-                  <ProtectedRoute>
-                    <CreateQuiz />
-                  </ProtectedRoute>
-                }
-              />
+                <Route
+                  path="/quizzes/:id"
+                  element={<ProtectedRoute><QuizTakingGamified /></ProtectedRoute>}
+                />
 
-              <Route
-                path="/admin"
-                element={
-                  <ProtectedRoute adminOnly={true}>
-                    <AdminPanel />
-                  </ProtectedRoute>
-                }
-              />
+                <Route
+                  path="/create-quiz"
+                  element={<ProtectedRoute><CreateQuiz /></ProtectedRoute>}
+                />
 
-              <Route
-                path="/subscription"
-                element={
-                  <ProtectedRoute>
-                    <Subscription />
-                  </ProtectedRoute>
-                }
-              />
+                <Route
+                  path="/admin"
+                  element={<ProtectedRoute adminOnly={true}><AdminPanel /></ProtectedRoute>}
+                />
 
-              <Route
-                path="/leaderboard"
-                element={
-                  <ProtectedRoute>
-                    <Leaderboard />
-                  </ProtectedRoute>
-                }
-              />
+                <Route
+                  path="/subscription"
+                  element={<ProtectedRoute><Subscription /></ProtectedRoute>}
+                />
 
-              <Route
-                path="/achievements"
-                element={
-                  <ProtectedRoute>
-                    <Achievements />
-                  </ProtectedRoute>
-                }
-              />
+                <Route
+                  path="/leaderboard"
+                  element={<ProtectedRoute><Leaderboard /></ProtectedRoute>}
+                />
 
-              <Route
-                path="/shop"
-                element={
-                  <ProtectedRoute>
-                    <Shop />
-                  </ProtectedRoute>
-                }
-              />
+                <Route
+                  path="/achievements"
+                  element={<ProtectedRoute><Achievements /></ProtectedRoute>}
+                />
 
-              <Route
-                path="/minigames"
-                element={
-                  <ProtectedRoute>
-                    <Minigames />
-                  </ProtectedRoute>
-                }
-              />
+                <Route
+                  path="/shop"
+                  element={<ProtectedRoute><Shop /></ProtectedRoute>}
+                />
 
-              <Route
-                path="/notifications"
-                element={
-                  <ProtectedRoute>
-                    <Notifications />
-                  </ProtectedRoute>
-                }
-              />
+                <Route
+                  path="/minigames"
+                  element={<ProtectedRoute><Minigames /></ProtectedRoute>}
+                />
 
-              <Route
-                path="/multiplayer/:roomId"
-                element={
-                  <ProtectedRoute>
-                    <QuizMultiplayer />
-                  </ProtectedRoute>
-                }
-              />
-            </Routes>
-          </main>
+                <Route
+                  path="/notifications"
+                  element={<ProtectedRoute><Notifications /></ProtectedRoute>}
+                />
 
-          <Footer />
-        </div>
+                <Route
+                  path="/multiplayer/:roomId"
+                  element={<ProtectedRoute><QuizMultiplayer /></ProtectedRoute>}
+                />
+
+              </Routes>
+            </main>
+
+            {/* GLASS FOOTER */}
+            <Footer />
+
+          </div>
+        </ToastProvider>
       </AuthProvider>
     </Router>
   );

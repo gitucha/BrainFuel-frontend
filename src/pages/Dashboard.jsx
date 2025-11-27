@@ -1,21 +1,15 @@
+// src/pages/Dashboard.jsx
 import React, { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import api from "../lib/api";
 import { useAuth } from "../hooks/useAuth";
 
-/**
- * Dashboard.jsx
- * Option 3: OG layout + upgraded features
- *
- * Drop into src/pages/Dashboard.jsx (replace existing Dashboard if any)
- */
-
 export default function Dashboard() {
   const navigate = useNavigate();
   const { user, loadingUser } = useAuth();
 
-  // Local notifications (client-side only)
+  // Local notifications (client-side only, plus count for UI)
   const STORAGE_KEY = "brainfuel_notifications";
   const [notifications, setNotifications] = useState([]);
 
@@ -24,7 +18,6 @@ export default function Dashboard() {
     if (saved && Array.isArray(saved)) {
       setNotifications(saved);
     } else {
-      // default if none
       const defaults = [
         {
           id: 1,
@@ -43,7 +36,9 @@ export default function Dashboard() {
 
   const markAsReadLocal = (id) => {
     setNotifications((prev) => {
-      const next = prev.map((n) => (n.id === id ? { ...n, is_read: true } : n));
+      const next = prev.map((n) =>
+        n.id === id ? { ...n, is_read: true } : n
+      );
       localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
       return next;
     });
@@ -58,27 +53,31 @@ export default function Dashboard() {
   };
 
   // Fetch categories
-  const { data: categories = [], isLoading: loadingCategories } = useQuery({
+  const {
+    data: categories = [],
+    isLoading: loadingCategories,
+  } = useQuery({
     queryKey: ["categories"],
     queryFn: async () => {
       try {
         const { data } = await api.get("/quizzes/categories/");
-        return data.categories || data; // accept {categories: [...]} or raw list
+        return data.categories || data;
       } catch {
-        // fallback: simple static categories if backend not ready
         return ["General", "Science", "Math", "History", "Technology"];
       }
     },
     staleTime: 1000 * 60 * 5,
   });
 
-  // Fetch recommended quizzes (top recent approved)
-  const { data: quizzes = [], isLoading: loadingQuizzes } = useQuery({
+  // Fetch recommended quizzes
+  const {
+    data: quizzes = [],
+    isLoading: loadingQuizzes,
+  } = useQuery({
     queryKey: ["recommended_quizzes"],
     queryFn: async () => {
       try {
         const { data } = await api.get("/quizzes/?search=&premium=false");
-        // backend likely returns paginated, so normalize
         if (Array.isArray(data)) return data;
         if (Array.isArray(data.results)) return data.results;
         if (Array.isArray(data.data)) return data.data;
@@ -90,10 +89,8 @@ export default function Dashboard() {
     staleTime: 1000 * 60,
   });
 
-  // pick featured quiz for Ready-to-Learn card
   const featuredQuiz = useMemo(() => {
     if (!quizzes || quizzes.length === 0) return null;
-    // prefer quizzes created_by !== user to surface public quizzes
     const filtered = quizzes.filter((q) => {
       if (!user) return true;
       return q.created_by ? q.created_by !== user.id : true;
@@ -101,139 +98,259 @@ export default function Dashboard() {
     return filtered.length ? filtered[0] : quizzes[0];
   }, [quizzes, user]);
 
-  // helper: start quiz (go to quiz taking enhanced)
   const startQuiz = (quizId) => {
     navigate(`/quizzes/${quizId}`);
   };
 
-  // start new quiz - go to categories page (user picks category & difficulty)
   const startNewQuiz = () => {
     navigate("/categories");
   };
 
-  // nav quick links
   const goShop = () => navigate("/shop");
   const goAchievements = () => navigate("/achievements");
   const goNotifications = () => navigate("/notifications");
   const goSubscription = () => navigate("/subscription");
   const goMinigames = () => navigate("/minigames");
+  const goHelp = () => navigate("/help");
 
   if (loadingUser) return <div className="p-6">Loading...</div>;
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-6xl mx-auto space-y-6">
-        {/* Top Row: welcome + stats + quick actions */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-          {/* Welcome / Ready card (big) */}
-          <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-md">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h1 className="text-2xl font-bold">
-                  Welcome back{user?.username ? `, ${user.username}` : ""} 👋
-                </h1>
-                <p className="text-gray-600 mt-2">
-                  Ready to learn? Pick a category or jump into a recommended quiz.
-                </p>
+    <div className="min-h-screen bg-linear-to-br from-[#e8f3ff] via-white to-[#dce8ff]">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-10">
+        {/* HERO SECTION – inspired by your screenshot */}
+        <section className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
+          {/* Left: headline + CTAs */}
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.25em] text-blue-500 mb-3">
+              Welcome back
+            </p>
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 leading-tight">
+              Fuel your brain with{" "}
+              <span className="text-transparent bg-clip-text bg-linear-to-r from-blue-600 to-indigo-500">
+                gamified quizzes.
+              </span>
+            </h1>
+            <p className="mt-4 text-sm sm:text-base text-slate-600 max-w-xl">
+              Pick a category, set your difficulty, and race against the clock.
+              Earn XP, collect thalers, unlock achievements and keep your
+              streak alive.
+            </p>
 
-                {/* Dynamic CTA */}
-                <div className="mt-6 flex gap-4 items-center">
-                  <button
-                    onClick={startNewQuiz}
-                    className="px-6 py-3 bg-blue-600 text-white rounded-md shadow hover:bg-blue-700"
-                  >
-                    Start a New Quiz
-                  </button>
+            <div className="mt-8 flex flex-wrap items-center gap-4">
+              <button
+                onClick={startNewQuiz}
+                className="inline-flex items-center px-6 py-3 rounded-full bg-blue-600 text-white text-sm font-semibold shadow-md hover:bg-blue-700 transition"
+              >
+                Start a quiz
+                <span className="ml-2 text-lg">▶</span>
+              </button>
 
-                  {featuredQuiz && (
-                    <button
-                      onClick={() => startQuiz(featuredQuiz.id)}
-                      className="px-4 py-2 border rounded-md text-gray-700 hover:bg-gray-50"
-                    >
-                      Try featured: {featuredQuiz.title}
-                    </button>
-                  )}
-                </div>
+              {featuredQuiz && (
+                <button
+                  onClick={() => startQuiz(featuredQuiz.id)}
+                  className="inline-flex items-center px-5 py-2.5 rounded-full border border-blue-200 bg-white/80 text-sm font-medium text-blue-700 hover:bg-white shadow-sm transition"
+                >
+                  Try: {featuredQuiz.title}
+                </button>
+              )}
+            </div>
+
+            <div className="mt-5 flex flex-wrap items-center gap-6 text-xs text-slate-500">
+              <div className="flex items-center gap-2">
+                <span className="inline-block w-2 h-2 rounded-full bg-emerald-400" />
+                <span>
+                  Level {user?.level ?? 1} • {user?.xp ?? 0} XP •{" "}
+                  {user?.thalers ?? 0} thalers
+                </span>
               </div>
-
-              {/* Notifications & subscription quick */}
-              <div className="flex flex-col items-end gap-3">
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={goNotifications}
-                    className="relative px-3 py-2 bg-white border rounded-full hover:shadow-sm"
-                    aria-label="Notifications"
-                  >
-                    🔔
-                    {unreadCount > 0 && (
-                      <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
-                        {unreadCount}
-                      </span>
-                    )}
-                  </button>
-
-                  <button
-                    onClick={goSubscription}
-                    className="px-3 py-2 bg-white border rounded-md hover:shadow-sm text-sm"
-                  >
-                    {user?.is_premium ? "Premium" : "Free"} • Manage
-                  </button>
-                </div>
-
-                <div className="text-right text-sm text-gray-500">
-                  <div>
-                    <span className="font-semibold text-gray-800">
-                      {user?.username || "Learner"}
-                    </span>
-                  </div>
-                  <div>Member since: {user?.date_joined ? new Date(user.date_joined).toLocaleDateString() : "—"}</div>
-                </div>
-              </div>
+              <button
+                onClick={goSubscription}
+                className="underline-offset-4 hover:underline"
+              >
+                {user?.is_premium ? "Premium active" : "Upgrade to Premium"}
+              </button>
             </div>
           </div>
 
-          {/* Stats column */}
-          <div className="bg-white p-6 rounded-2xl shadow-md flex flex-col gap-4">
-            <div>
-              <div className="text-sm text-gray-500">Level</div>
-              <div className="text-xl font-bold">{user?.level ?? 1}</div>
+          {/* Right: dashboard snapshot in a glass card */}
+          <div className="relative">
+            <div className="absolute -top-6 -right-8 w-32 h-32 bg-blue-200/40 blur-3xl rounded-full pointer-events-none" />
+            <div className="absolute -bottom-10 -left-6 w-40 h-40 bg-indigo-200/40 blur-3xl rounded-full pointer-events-none" />
+            <div className="relative rounded-3xl bg-white/70 border border-white/60 shadow-xl backdrop-blur-md overflow-hidden">
+              <div className="p-4 flex items-center justify-between">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                    Snapshot
+                  </p>
+                  <p className="text-sm font-semibold text-slate-800">
+                    Today&apos;s learning
+                  </p>
+                </div>
+                <button
+                  onClick={goAchievements}
+                  className="px-3 py-1 rounded-full bg-blue-600 text-white text-[11px] font-medium"
+                >
+                  View achievements
+                </button>
+              </div>
+              <div className="bg-linear-to-br from-blue-500/90 via-indigo-500/90 to-blue-700/90 px-4 py-6">
+                <p className="text-xs text-blue-100 mb-1">
+                  {user?.username || "Learner"}
+                </p>
+                <p className="text-lg font-semibold text-white mb-4">
+                  Level {user?.level ?? 1} • {user?.xp ?? 0} XP
+                </p>
+                <div className="w-full h-2 rounded-full bg-white/20 overflow-hidden mb-4">
+                  <div
+                    className="h-2 rounded-full bg-white"
+                    style={{
+                      width: `${Math.min(
+                        100,
+                        ((user?.xp ?? 0) / ((user?.level ?? 1) * 100)) * 100
+                      )}%`,
+                    }}
+                  />
+                </div>
+                <div className="flex items-center justify-between text-xs text-blue-50">
+                  <span>Thalers: {user?.thalers ?? 0}</span>
+                  <span>Quizzes available: {quizzes?.length ?? 0}</span>
+                </div>
+              </div>
+              {/* Motivational quote block — replaces preview image */}
+              <div className="bg-slate-50 px-4 py-6">
+                <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-inner text-center">
+                  <p className="text-xl sm:text-2xl font-extrabold text-slate-800 leading-snug">
+                    “Every question you answer today
+                    brings you closer to the learner
+                    you're becoming tomorrow.”
+                  </p>
+
+                  <p className="mt-3 text-xs text-slate-500 tracking-wide">
+                    Keep pushing. Your next level is waiting.
+                  </p>
+                </div>
+              </div>
+
             </div>
+          </div>
+        </section>
+
+        {/* TOP STATS + NOTIFICATIONS SUMMARY */}
+        <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Stats column (same data, new style) */}
+          {/* Weekly goals replacement card */}
+          <div className="bg-white/80 backdrop-blur rounded-3xl shadow-sm border border-white/70 p-5 flex flex-col gap-4">
+            <h3 className="text-sm font-semibold text-slate-900">Weekly Goals</h3>
 
             <div>
-              <div className="text-sm text-gray-500">XP</div>
-              <div className="text-xl font-bold">{user?.xp ?? 0}</div>
-              <div className="w-full bg-gray-200 h-2 rounded mt-2">
+              <p className="text-xs text-slate-500 mb-1">Quizzes to complete</p>
+              <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
                 <div
-                  className="h-2 rounded bg-blue-600"
-                  style={{
-                    width: `${Math.min(100, ((user?.xp ?? 0) / ((user?.level ?? 1) * 100)) * 100)}%`,
-                  }}
+                  className="h-2 bg-blue-600 rounded-full"
+                  style={{ width: "40%" }}
                 />
               </div>
+              <p className="text-[11px] text-slate-500 mt-1">4 / 10 completed</p>
             </div>
 
             <div>
-              <div className="text-sm text-gray-500">Thalers</div>
-              <div className="text-xl font-bold">{user?.thalers ?? 0}</div>
-              <div className="mt-3 flex gap-2">
-                <button onClick={goShop} className="px-3 py-2 bg-yellow-100 rounded-md">
-                  Buy Thalers
-                </button>
-                <button onClick={goAchievements} className="px-3 py-2 bg-green-50 rounded-md">
-                  Achievements
-                </button>
+              <p className="text-xs text-slate-500 mb-1">XP to earn</p>
+              <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                <div
+                  className="h-2 bg-indigo-600 rounded-full"
+                  style={{ width: "55%" }}
+                />
               </div>
+              <p className="text-[11px] text-slate-500 mt-1">550 / 1000 XP</p>
+            </div>
+
+            <div className="pt-2">
+              <button
+                onClick={() => navigate("/achievements")}
+                className="px-4 py-2 w-full rounded-full bg-blue-600 text-white text-xs font-medium hover:bg-blue-700"
+              >
+                View all challenges
+              </button>
             </div>
           </div>
-        </div>
 
-        {/* Categories strip */}
-        <div className="bg-white p-4 rounded-2xl shadow-sm">
+
+          {/* Notifications summary – instead of leaderboard preview */}
+          <div className="lg:col-span-2 bg-white/80 backdrop-blur rounded-3xl shadow-sm border border-white/70 p-5 flex flex-col">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <h3 className="text-sm font-semibold text-slate-900">
+                  Notifications
+                </h3>
+                <p className="text-xs text-slate-500">
+                  {unreadCount > 0
+                    ? `${unreadCount} unread notification${unreadCount > 1 ? "s" : ""
+                    }`
+                    : "You are all caught up."}
+                </p>
+              </div>
+              <button
+                onClick={goNotifications}
+                className="px-4 py-2 rounded-full bg-slate-900 text-white text-xs font-medium hover:bg-black"
+              >
+                Open inbox
+              </button>
+            </div>
+
+            <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
+              {notifications.length === 0 && (
+                <p className="text-xs text-slate-400">
+                  No notifications yet. Complete quizzes to start getting
+                  updates.
+                </p>
+              )}
+
+              {notifications.slice(0, 4).map((n) => (
+                <div
+                  key={n.id}
+                  className={`flex items-start justify-between gap-3 rounded-2xl px-3 py-2 border ${n.is_read
+                    ? "border-slate-100 bg-slate-50"
+                    : "border-blue-100 bg-blue-50"
+                    }`}
+                >
+                  <div>
+                    <p className="text-xs font-medium text-slate-800">
+                      {n.title || "Notification"}
+                    </p>
+                    <p className="text-[11px] text-slate-500">{n.message}</p>
+                  </div>
+                  <div className="flex flex-col items-end gap-1">
+                    {!n.is_read && (
+                      <button
+                        onClick={() => markAsReadLocal(n.id)}
+                        className="text-[10px] text-blue-700 hover:underline"
+                      >
+                        Mark read
+                      </button>
+                    )}
+                    <button
+                      onClick={() => dismissLocal(n.id)}
+                      className="text-[10px] text-slate-400 hover:text-slate-600"
+                    >
+                      Dismiss
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* CATEGORIES STRIP */}
+        <section className="bg-white/80 backdrop-blur rounded-3xl shadow-sm border border-white/70 p-4">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="font-semibold">Browse Categories</h3>
+            <h3 className="text-sm font-semibold text-slate-900">
+              Browse categories
+            </h3>
             <button
               onClick={() => navigate("/categories")}
-              className="text-sm text-blue-600 hover:underline"
+              className="text-xs text-blue-600 hover:underline"
             >
               See all
             </button>
@@ -241,53 +358,78 @@ export default function Dashboard() {
 
           <div className="flex gap-3 overflow-x-auto py-2">
             {loadingCategories ? (
-              <div className="text-gray-500 px-2">Loading categories...</div>
+              <div className="text-slate-500 text-sm px-2">
+                Loading categories...
+              </div>
             ) : (
               categories.map((c, idx) => (
                 <button
                   key={c + "-" + idx}
-                  onClick={() => navigate(`/categories?category=${encodeURIComponent(c)}&difficulty=easy`)}
-                  className="min-w-max px-4 py-2 bg-white border rounded-xl shadow-sm hover:shadow-md"
+                  onClick={() =>
+                    navigate(
+                      `/categories?category=${encodeURIComponent(
+                        c
+                      )}&difficulty=easy`
+                    )
+                  }
+                  className="min-w-max px-4 py-2 rounded-full bg-white border border-slate-200 shadow-sm text-xs font-medium text-slate-700 hover:bg-slate-50"
                 >
                   {c}
                 </button>
               ))
             )}
           </div>
-        </div>
+        </section>
 
-        {/* New challenge awaits - cards carousel */}
-        <div className="bg-white p-4 rounded-2xl shadow-sm">
+        {/* QUIZ CARDS GRID */}
+        <section className="bg-white/80 backdrop-blur rounded-3xl shadow-sm border border-white/70 p-4">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="font-semibold">A New Challenge Awaits</h3>
-            <div className="text-sm text-gray-500">{quizzes?.length ?? 0} quizzes</div>
+            <h3 className="text-sm font-semibold text-slate-900">
+              A new challenge awaits
+            </h3>
+            <div className="text-xs text-slate-500">
+              {quizzes?.length ?? 0} quizzes
+            </div>
           </div>
 
           {loadingQuizzes ? (
-            <div className="p-6 text-gray-500">Loading quizzes...</div>
+            <div className="p-6 text-slate-500 text-sm">
+              Loading quizzes...
+            </div>
           ) : quizzes.length === 0 ? (
-            <div className="p-6 text-gray-500">No quizzes found.</div>
+            <div className="p-6 text-slate-500 text-sm">No quizzes found.</div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {quizzes.slice(0, 9).map((q) => (
-                <div key={q.id} className="p-4 border rounded-lg bg-white flex flex-col justify-between">
+                <div
+                  key={q.id}
+                  className="p-4 rounded-2xl border border-slate-100 bg-white flex flex-col justify-between shadow-sm hover:shadow-md transition"
+                >
                   <div>
-                    <h4 className="font-semibold">{q.title}</h4>
-                    <p className="text-sm text-gray-500 mt-2 line-clamp-3">{q.description}</p>
+                    <h4 className="font-semibold text-slate-900 text-sm mb-1">
+                      {q.title}
+                    </h4>
+                    <p className="text-xs text-slate-500 line-clamp-3">
+                      {q.description}
+                    </p>
                   </div>
 
                   <div className="mt-4 flex items-center justify-between">
-                    <div className="text-sm text-gray-600">{q.category || "General"}</div>
+                    <div className="text-[11px] text-slate-500">
+                      {q.category || "General"}
+                    </div>
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => startQuiz(q.id)}
-                        className="px-3 py-1 bg-blue-600 text-white rounded-md text-sm"
+                        className="px-3 py-1.5 rounded-full bg-blue-600 text-white text-[11px] font-medium hover:bg-blue-700"
                       >
                         Play
                       </button>
                       <button
-                        onClick={() => navigate(`/create-quiz?clone=${q.id}`)}
-                        className="px-2 py-1 border rounded text-sm"
+                        onClick={() =>
+                          navigate(`/create-quiz?clone=${q.id}`)
+                        }
+                        className="px-2 py-1.5 rounded-full border border-slate-200 text-[11px] text-slate-700 hover:bg-slate-50"
                       >
                         Clone
                       </button>
@@ -297,89 +439,150 @@ export default function Dashboard() {
               ))}
             </div>
           )}
-        </div>
+        </section>
 
-        {/* Mini-games & utilities */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-white p-4 rounded-2xl shadow-sm">
-            <h4 className="font-semibold mb-3">Mini-Games</h4>
-            <p className="text-sm text-gray-500 mb-3">Quick brain boosters to warm up.</p>
+        {/* MINI-GAMES + QUICK LINKS + SUBSCRIPTION */}
+        <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Mini-games */}
+          <div className="bg-white/80 backdrop-blur rounded-3xl shadow-sm border border-white/70 p-4">
+            <h4 className="text-sm font-semibold text-slate-900 mb-2">
+              Mini-games
+            </h4>
+            <p className="text-xs text-slate-500 mb-3">
+              Quick brain boosters to warm up.
+            </p>
 
-            <div className="space-y-3">
+            <div className="space-y-3 text-xs">
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="font-semibold">Speed Round</div>
-                  <div className="text-xs text-gray-500">Fast 10-question challenge</div>
+                  <div className="font-semibold text-slate-800">
+                    Speed round
+                  </div>
+                  <div className="text-[11px] text-slate-500">
+                    Fast 10-question challenge
+                  </div>
                 </div>
-                <button onClick={() => navigate("/minigames/speed")} className="px-3 py-1 bg-indigo-600 text-white rounded text-sm">
-                  Play
+                <button
+                  onClick={() => navigate("/minigames/speed")}
+                  className="px-3 py-1.5 rounded-full bg-indigo-600 text-white text-[11px] hover:bg-indigo-700"
+                >
+                  Coming soon!
                 </button>
               </div>
 
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="font-semibold">Memory Match</div>
-                  <div className="text-xs text-gray-500">Pair symbols with your memory</div>
+                  <div className="font-semibold text-slate-800">
+                    Memory match
+                  </div>
+                  <div className="text-[11px] text-slate-500">
+                    Pair symbols with your memory
+                  </div>
                 </div>
-                <button onClick={() => navigate("/minigames/memory")} className="px-3 py-1 bg-indigo-600 text-white rounded text-sm">
-                  Play
+                <button
+                  onClick={() => navigate("/minigames/memory")}
+                  className="px-3 py-1.5 rounded-full bg-indigo-600 text-white text-[11px] hover:bg-indigo-700"
+                >
+                  Coming soon!
                 </button>
               </div>
 
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="font-semibold">Daily Duel</div>
-                  <div className="text-xs text-gray-500">Challenge friends — live</div>
+                  <div className="font-semibold text-slate-800">
+                    Daily duel
+                  </div>
+                  <div className="text-[11px] text-slate-500">
+                    Challenge friends — live
+                  </div>
                 </div>
-                <button onClick={() => navigate("/minigames/duel")} className="px-3 py-1 bg-indigo-600 text-white rounded text-sm">
-                  Play
+                <button
+                  onClick={() => navigate("/minigames/duel")}
+                  className="px-3 py-1.5 rounded-full bg-indigo-600 text-white text-[11px] hover:bg-indigo-700"
+                >
+                  Coming soon!
                 </button>
               </div>
             </div>
 
             <div className="mt-4">
-              <button onClick={goMinigames} className="text-sm text-blue-600 hover:underline">See all minigames</button>
-            </div>
-          </div>
-
-          {/* Quick links: Shop / Achievements / Notifications */}
-          <div className="bg-white p-4 rounded-2xl shadow-sm flex flex-col gap-3">
-            <h4 className="font-semibold">Quick Links</h4>
-
-            <button onClick={goShop} className="w-full text-left px-4 py-3 bg-yellow-50 rounded-md">
-              Shop — Buy Thalers
-            </button>
-
-            <button onClick={goAchievements} className="w-full text-left px-4 py-3 bg-green-50 rounded-md">
-              Achievements & Progress
-            </button>
-
-            <button onClick={goNotifications} className="w-full text-left px-4 py-3 bg-white border rounded-md">
-              Notifications ({unreadCount})
-            </button>
-          </div>
-
-          {/* Subscription / Promo card */}
-          <div className="bg-white p-4 rounded-2xl shadow-sm flex flex-col justify-between">
-            <div>
-              <h4 className="font-semibold">Subscription</h4>
-              <p className="text-sm text-gray-600 mt-2">
-                {user?.is_premium ? "You are on a Premium plan. Enjoy exclusive quizzes." : "Upgrade to unlock premium quizzes & perks."}
-              </p>
-            </div>
-
-            <div className="mt-4">
-              <button onClick={goSubscription} className="w-full px-4 py-2 bg-blue-600 text-white rounded-md">
-                {user?.is_premium ? "Manage Plan" : "Upgrade"}
+              <button
+                onClick={goMinigames}
+                className="text-[11px] text-blue-600 hover:underline"
+              >
+                See all mini-games
               </button>
             </div>
           </div>
-        </div>
 
-        {/* Footer small CTA */}
-        <div className="text-center py-6 text-gray-500">
-          <div>Need help? Visit our <button onClick={() => navigate("/help")} className="text-blue-600 hover:underline">Help Center</button></div>
-        </div>
+          {/* Quick links */}
+          <div className="bg-white/80 backdrop-blur rounded-3xl shadow-sm border border-white/70 p-4 flex flex-col gap-3">
+            <h4 className="text-sm font-semibold text-slate-900">
+              Quick links
+            </h4>
+
+            <button
+              onClick={goShop}
+              className="w-full text-left px-4 py-3 rounded-2xl bg-yellow-50 text-xs font-medium text-slate-800 hover:bg-yellow-100"
+            >
+              Shop — buy thalers
+            </button>
+
+            <button
+              onClick={goAchievements}
+              className="w-full text-left px-4 py-3 rounded-2xl bg-emerald-50 text-xs font-medium text-emerald-800 hover:bg-emerald-100"
+            >
+              Achievements & progress
+            </button>
+
+            <button
+              onClick={goNotifications}
+              className="w-full text-left px-4 py-3 rounded-2xl border border-slate-200 bg-white text-xs font-medium text-slate-800 hover:bg-slate-50"
+            >
+              Notifications ({unreadCount})
+            </button>
+
+            <button
+              onClick={goHelp}
+              className="w-full text-left px-4 py-3 rounded-2xl bg-slate-50 text-xs font-medium text-slate-700 hover:bg-slate-100"
+            >
+              Help center & contact
+            </button>
+          </div>
+
+          {/* Subscription card */}
+          <div className="bg-white/80 backdrop-blur rounded-3xl shadow-sm border border-white/70 p-4 flex flex-col justify-between">
+            <div>
+              <h4 className="text-sm font-semibold text-slate-900">
+                Subscription
+              </h4>
+              <p className="text-xs text-slate-600 mt-2">
+                {user?.is_premium
+                  ? "You are on a Premium plan. Enjoy exclusive quizzes, extra rewards, and more."
+                  : "Upgrade to unlock premium quizzes, extra rewards and priority access."}
+              </p>
+            </div>
+            <div className="mt-4">
+              <button
+                onClick={goSubscription}
+                className="w-full px-4 py-2 rounded-full bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700"
+              >
+                {user?.is_premium ? "Manage plan" : "Upgrade"}
+              </button>
+            </div>
+          </div>
+        </section>
+
+        {/* FOOTER CTA */}
+        <section className="text-center py-4 text-xs text-slate-500">
+          Need help?{" "}
+          <button
+            onClick={goHelp}
+            className="text-blue-600 hover:underline"
+          >
+            Visit the Help Center
+          </button>
+        </section>
       </div>
     </div>
   );

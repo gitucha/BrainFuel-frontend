@@ -1,1 +1,33 @@
 @import "tailwindcss";
+
+:root {
+  --bf-bg-from: #e0f2ff;
+  --bf-bg-via: #f5f7ff;
+  --bf-bg-to:   #e0f2ff;
+}
+
+body {
+  margin: 0;
+  font-family: "Plus Jakarta Sans", system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
+  background: radial-gradient(circle at top left, #e0f2ff 0, #f9fbff 40%, #dbeafe 100%);
+}
+
+/* Optional: make the whole app card-like with rounded corners */
+#root {
+  min-height: 100vh;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  background: radial-gradient(circle at top left, #e0f2ff 0, #f9fbff 40%, #dbeafe 100%);
+}
+
+.app-shell {
+  width: 100%;
+  max-width: 1280px;
+  margin: 16px;
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.16);
+  background: linear-gradient(180deg, #f9fbff 0%, #ecf3ff 35%, #f9fbff 100%);
+}

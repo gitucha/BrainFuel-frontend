@@ -1,52 +1,81 @@
 import React from "react";
+import PaystackButton from "../components/PaystackButton";
+import { useAuth } from "../hooks/useAuth";
 
-function Shop() {
+export default function Shop() {
+  const { user } = useAuth();
+
   const items = [
     {
-      name: "Small Coin Pack",
-      desc: "Add 500 BrainFuel Coins to your balance.",
-      price: "$1.99",
+      id: "small",
+      name: "Small Thaler Pack",
+      desc: "Add 500 BrainFuel Thalers to your balance.",
+      thalers: 500,
+      priceKES: 200,
     },
     {
-      name: "Medium Coin Pack",
-      desc: "Add 2,000 BrainFuel Coins for extended fun.",
-      price: "$4.99",
+      id: "medium",
+      name: "Medium Thaler Pack",
+      desc: "Add 2,000 BrainFuel Thalers for longer sessions.",
+      thalers: 2000,
+      priceKES: 600,
     },
     {
-      name: "Mega Coin Chest",
-      desc: "Unlock 10,000 BrainFuel Coins with bonus perks.",
-      price: "$9.99",
+      id: "mega",
+      name: "Mega Thaler Chest",
+      desc: "Unlock 10,000 BrainFuel Thalers with bonus perks.",
+      thalers: 10000,
+      priceKES: 1200,
     },
   ];
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-10">
-      <h2 className="text-3xl font-bold text-center mb-8">BrainFuel Shop </h2>
+      <h2 className="text-3xl font-bold text-center mb-10">BrainFuel Shop</h2>
 
-      <div className="flex justify-between items-center mb-8">
-        <p className="text-gray-600 text-sm">
-          Your Balance: <span className="font-semibold text-blue-600">5,000 Coins</span>
+      {/* BALANCE + CTA */}
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-10">
+        <p className="text-gray-600 text-sm mb-3 sm:mb-0">
+          Your Balance:{" "}
+          <span className="font-semibold text-blue-600">
+            {user?.thalers ?? 0} Thalers
+          </span>
         </p>
-        <button className="px-4 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700">
-          Get More Coins
-        </button>
+
+        <a
+          href="#shop"
+          className="px-4 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+        >
+          Buy More Thalers
+        </a>
       </div>
 
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {items.map((i, idx) => (
+      {/* ITEMS GRID */}
+      <div id="shop" className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {items.map((i) => (
           <div
-            key={idx}
-            className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition"
+            key={i.id}
+            className="bg-white rounded-2xl shadow-sm p-6 hover:shadow-xl transition border border-gray-100"
           >
-            <div className="h-24 bg-linear-to-br from-blue-50 to-blue-100 rounded mb-4 flex items-center justify-center text-4xl">
+            <div className="h-24 rounded-xl bg-linear-to-br from-blue-50 to-blue-100 flex items-center justify-center text-5xl">
+              💰
             </div>
-            <h3 className="font-semibold">{i.name}</h3>
+
+            <h3 className="font-semibold text-lg mt-4">{i.name}</h3>
             <p className="text-sm text-gray-500 mt-1">{i.desc}</p>
-            <div className="flex justify-between items-center mt-4">
-              <p className="font-bold text-blue-600">{i.price}</p>
-              <button className="text-sm bg-blue-600 text-white px-3 py-1.5 rounded hover:bg-blue-700">
-                Buy
-              </button>
+
+            <div className="flex justify-between items-center mt-6">
+              <p className="font-bold text-blue-600 text-lg">
+                KES {i.priceKES.toLocaleString()}
+              </p>
+
+              <PaystackButton
+                amountMajor={i.priceKES}
+                purpose={`shop_${i.id}`}
+                shopThalers={i.thalers}
+                redirectTo="/shop"
+                label="Buy"
+              />
             </div>
           </div>
         ))}
@@ -54,5 +83,3 @@ function Shop() {
     </div>
   );
 }
-
-export default Shop;

@@ -1,14 +1,15 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import PaystackButton from "../components/PaystackButton";
-
+import { useAuth } from "../hooks/useAuth";
 
 export default function Subscription() {
-  // MUST match a real plan key
-  const [selected, setSelected] = useState("warrior");
+  const { user } = useAuth();
 
   const plans = {
     basic: {
-      price: "Free",
+      id: "basic",
+      priceLabel: "Free",
+      amountMajor: 0,
       features: [
         "Access to community quizzes",
         "Basic progress tracking",
@@ -16,7 +17,9 @@ export default function Subscription() {
       ],
     },
     scholar: {
-      price: "$7.99 / month",
+      id: "scholar",
+      priceLabel: "500KES / month",
+      amountMajor: 500,
       features: [
         "Access to 300 premium quizzes",
         "Ad-free learning",
@@ -24,7 +27,9 @@ export default function Subscription() {
       ],
     },
     warrior: {
-      price: "$19.99 / month",
+      id: "warrior",
+      priceLabel: "750KES / month",
+      amountMajor: 750,
       features: [
         "Access to 900+ premium quizzes",
         "Ad-free learning experience",
@@ -34,7 +39,9 @@ export default function Subscription() {
       ],
     },
     elite: {
-      price: "$34.99 / month",
+      id: "elite",
+      priceLabel: "1200KES / month",
+      amountMajor: 1200,
       features: [
         "All Premium Warrior features",
         "Early access to quiz packs",
@@ -45,8 +52,16 @@ export default function Subscription() {
     },
   };
 
-  const currentPlan = "warrior"; // will come from backend later
-  const plan = plans[selected]; // prevent undefined access
+  // For a new user (no plan), treat as "basic" (free)
+  const currentPlan = user?.subscription_plan || "basic";
+
+  const [selected, setSelected] = useState(currentPlan);
+
+  useEffect(() => {
+    setSelected(currentPlan);
+  }, [currentPlan]);
+
+  const selectedPlan = plans[selected] || plans.basic;
 
   return (
     <div className="min-h-screen bg-gray-50 px-6 py-10">
@@ -62,16 +77,15 @@ export default function Subscription() {
               {selected} Plan
             </h2>
 
-            {/* SAFE: will never crash because `plan` is defined */}
             <ul className="space-y-3 mb-6">
-              {plan.features.map((f, i) => (
+              {selectedPlan.features.map((f, i) => (
                 <li key={i} className="flex gap-2 text-sm text-gray-700">
                   ✔ {f}
                 </li>
               ))}
             </ul>
 
-            <p className="text-xl font-bold mt-4">{plan.price}</p>
+            <p className="text-xl font-bold">{selectedPlan.priceLabel}</p>
 
             <button className="mt-6 w-full px-4 py-2 bg-gray-100 rounded-lg text-sm">
               Manage Payment Methods
@@ -83,46 +97,55 @@ export default function Subscription() {
             <h3 className="font-semibold mb-4">Explore Plans</h3>
 
             <div className="space-y-4">
-              {Object.keys(plans).map((planKey) => (
-                <div
-                  key={planKey}
-                  className={`p-4 border rounded-xl ${selected === planKey
-                    ? "border-blue-500 bg-blue-50"
-                    : "border-gray-200"
+              {Object.keys(plans).map((planKey) => {
+                const p = plans[planKey];
+                const isCurrent = currentPlan === planKey;
+
+                return (
+                  <div
+                    key={planKey}
+                    className={`p-4 border rounded-xl ${
+                      selected === planKey
+                        ? "border-blue-500 bg-blue-50"
+                        : "border-gray-200"
                     }`}
-                >
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <p className="font-semibold capitalize">{planKey}</p>
-                      <p className="text-sm text-gray-500">
-                        {plans[planKey].price}
-                      </p>
+                  >
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <p className="font-semibold capitalize">{planKey}</p>
+                        <p className="text-sm text-gray-500">
+                          {p.priceLabel}
+                        </p>
+                      </div>
+
+                      <button
+                        onClick={() => setSelected(planKey)}
+                        className="px-4 py-1 text-sm border rounded-lg bg-white hover:bg-gray-50"
+                      >
+                        View details
+                      </button>
                     </div>
 
-                    <button
-                      onClick={() => setSelected(planKey)}
-                      className="px-4 py-1 text-sm border rounded-lg bg-white hover:bg-gray-50"
-                    >
-                      View details
-                    </button>
+                    <div className="mt-3">
+                      {isCurrent ? (
+                        <button className="px-4 py-2 bg-blue-500 text-white rounded-lg w-full text-sm cursor-default">
+                          You are on this plan
+                        </button>
+                      ) : p.amountMajor === 0 ? (
+                        <button className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg w-full text-sm cursor-default">
+                          Free plan
+                        </button>
+                      ) : (
+                        <PaystackButton
+                          planKey={planKey}
+                          amountMajor={p.amountMajor}
+                          purpose={`subscription_${planKey}`}
+                        />
+                      )}
+                    </div>
                   </div>
-
-                  <div className="mt-3">
-                    {currentPlan === plan.id ? (
-                      <button className="px-4 py-2 bg-blue-500 text-white rounded-lg w-full text-sm cursor-default">
-                        You are on this plan
-                      </button>
-                    ) : (
-                      <PaystackButton
-                        planKey={plan.id}
-                        amountMajor={plan.price}
-                        purpose={`subscription_${plan.id}`}
-                      />
-                    )}
-
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>

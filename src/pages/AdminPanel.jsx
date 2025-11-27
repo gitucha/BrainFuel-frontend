@@ -1,36 +1,49 @@
+// src/pages/AdminPanel.jsx
 import React from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "../lib/api";
 
 const fetchPending = async () => {
   const { data } = await api.get("/quizzes/pending/");
-  return data;
+  return Array.isArray(data) ? data : [];
 };
 
 const fetchReports = async () => {
-  const { data } = await api.get("/quizzes/reports/");
-  return data;
+  const { data } = await api.get("/admin/reports/");
+  return Array.isArray(data) ? data : [];
 };
 
 const fetchInsights = async () => {
   const { data } = await api.get("/admin/insights/");
-  return data;
+  return data || null;
 };
 
-const AdminPanel = () => {
+export default function AdminPanel() {
   const qc = useQueryClient();
 
-  const { data: pending, isPending: loadingPending } = useQuery({
+  const {
+    data: pending = [],
+    isLoading: loadingPending,
+    isError: errorPending,
+  } = useQuery({
     queryKey: ["pending-quizzes"],
     queryFn: fetchPending,
   });
 
-  const { data: reports, isPending: loadingReports } = useQuery({
-    queryKey: ["quiz-reports"],
+  const {
+    data: reports = [],
+    isLoading: loadingReports,
+    isError: errorReports,
+  } = useQuery({
+    queryKey: ["admin-reports"],
     queryFn: fetchReports,
   });
 
-  const { data: insights } = useQuery({
+  const {
+    data: insights,
+    isLoading: loadingInsights,
+    isError: errorInsights,
+  } = useQuery({
     queryKey: ["admin-insights"],
     queryFn: fetchInsights,
   });
@@ -52,104 +65,217 @@ const AdminPanel = () => {
   });
 
   return (
-    <div className="max-w-6xl mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-4">Admin Panel</h1>
-
-      {/* INSIGHTS */}
-      <div className="bg-white p-6 rounded shadow mb-10">
-        <h2 className="text-xl font-semibold mb-3">Platform Analytics</h2>
-
-        {insights ? (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            <div className="p-4 bg-gray-50 rounded shadow-sm">
-              <h3 className="font-semibold">Total Users</h3>
-              <p className="text-2xl">{insights.total_users}</p>
-            </div>
-            <div className="p-4 bg-gray-50 rounded shadow-sm">
-              <h3 className="font-semibold">Total Quizzes</h3>
-              <p className="text-2xl">{insights.total_quizzes}</p>
-            </div>
-            <div className="p-4 bg-gray-50 rounded shadow-sm">
-              <h3 className="font-semibold">Revenue</h3>
-              <p className="text-2xl">${insights.total_revenue}</p>
-            </div>
+    <div className="min-h-screen bg-linear-to-br from-[#e8f3ff] via-white to-[#dce8ff]">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-8">
+        {/* HEADER */}
+        <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <p className="text-[11px] uppercase tracking-[0.25em] text-blue-500">
+              Admin
+            </p>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
+              BrainFuel Control Center
+            </h1>
+            <p className="text-xs text-slate-500 mt-1">
+              Moderate quizzes, review reports, and track high-level performance.
+            </p>
           </div>
-        ) : (
-          <p className="text-gray-500">Loading...</p>
-        )}
-      </div>
+          <a
+            href="/api/admin/reports/?format=csv"
+            className="inline-flex items-center px-4 py-2 rounded-full bg-slate-900 text-white text-xs font-semibold shadow hover:bg-black"
+          >
+            Export reports (CSV)
+          </a>
+        </header>
 
-      {/* PENDING QUIZZES */}
-      <div className="mb-10">
-        <h2 className="text-xl font-semibold mb-3">Pending Quizzes</h2>
+        {/* INSIGHTS CARDS */}
+        <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="bg-white/80 backdrop-blur rounded-3xl border border-white/60 shadow-sm p-4">
+            <p className="text-[11px] text-slate-500 uppercase tracking-wide">
+              New users (7d)
+            </p>
+            {loadingInsights ? (
+              <p className="mt-2 text-sm text-slate-400">Loading…</p>
+            ) : errorInsights ? (
+              <p className="mt-2 text-sm text-red-500">Failed to load.</p>
+            ) : (
+              <p className="mt-1 text-2xl font-bold text-slate-900">
+                {insights?.new_users_last_7_days ?? 0}
+              </p>
+            )}
+          </div>
 
-        {loadingPending ? (
-          <p>Loading...</p>
-        ) : pending?.length === 0 ? (
-          <p className="text-gray-500">No pending quizzes.</p>
-        ) : (
-          <div className="space-y-4">
-            {pending.map((q) => (
-              <div key={q.id} className="p-4 bg-white rounded shadow">
-                <h3 className="font-semibold">{q.title}</h3>
-                <p className="text-gray-600 text-sm mb-3">
-                  By: {q.created_by_username} • Category: {q.category}
+          <div className="bg-white/80 backdrop-blur rounded-3xl border border-white/60 shadow-sm p-4">
+            <p className="text-[11px] text-slate-500 uppercase tracking-wide">
+              Quiz attempts (7d)
+            </p>
+            {loadingInsights ? (
+              <p className="mt-2 text-sm text-slate-400">Loading…</p>
+            ) : errorInsights ? (
+              <p className="mt-2 text-sm text-red-500">Failed to load.</p>
+            ) : (
+              <p className="mt-1 text-2xl font-bold text-slate-900">
+                {insights?.quiz_attempts_last_7_days ?? 0}
+              </p>
+            )}
+          </div>
+
+          <div className="bg-white/80 backdrop-blur rounded-3xl border border-white/60 shadow-sm p-4">
+            <p className="text-[11px] text-slate-500 uppercase tracking-wide">
+              Revenue (7d)
+            </p>
+            {loadingInsights ? (
+              <p className="mt-2 text-sm text-slate-400">Loading…</p>
+            ) : errorInsights ? (
+              <p className="mt-2 text-sm text-red-500">Failed to load.</p>
+            ) : (
+              <p className="mt-1 text-2xl font-bold text-slate-900">
+                KES {insights?.revenue_last_7_days ?? 0}
+              </p>
+            )}
+          </div>
+        </section>
+
+        {/* TOTALS STRIP */}
+        <section className="bg-white/80 backdrop-blur rounded-3xl border border-white/60 shadow-sm p-4 flex flex-wrap items-center gap-4 text-xs">
+          <div className="flex items-center gap-2">
+            <span className="inline-block w-2 h-2 rounded-full bg-emerald-400" />
+            <span className="text-slate-700">
+              Total users:{" "}
+              <span className="font-semibold">
+                {insights?.total_users ?? "—"}
+              </span>
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="inline-block w-2 h-2 rounded-full bg-blue-500" />
+            <span className="text-slate-700">
+              Premium users:{" "}
+              <span className="font-semibold">
+                {insights?.total_premium_users ?? "—"}
+              </span>
+            </span>
+          </div>
+        </section>
+
+        {/* PENDING + REPORTS GRID */}
+        <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* PENDING QUIZZES */}
+          <div className="bg-white/80 backdrop-blur rounded-3xl border border-white/60 shadow-sm p-5 flex flex-col">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <h2 className="text-sm font-semibold text-slate-900">
+                  Pending quizzes
+                </h2>
+                <p className="text-[11px] text-slate-500">
+                  Quizzes awaiting review and approval.
                 </p>
-
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => approveMutation.mutate(q.id)}
-                    className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-                  >
-                    Approve
-                  </button>
-                  <button
-                    onClick={() => rejectMutation.mutate(q.id)}
-                    className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-                  >
-                    Reject
-                  </button>
-                </div>
               </div>
-            ))}
+              <span className="text-[11px] px-3 py-1 rounded-full bg-slate-100 text-slate-700">
+                {pending.length} pending
+              </span>
+            </div>
+
+            {loadingPending ? (
+              <p className="text-xs text-slate-500">Loading pending quizzes…</p>
+            ) : errorPending ? (
+              <p className="text-xs text-red-500">
+                Failed to load pending quizzes.
+              </p>
+            ) : pending.length === 0 ? (
+              <p className="text-xs text-slate-400">No pending quizzes.</p>
+            ) : (
+              <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1">
+                {pending.map((q) => (
+                  <div
+                    key={q.id}
+                    className="p-4 rounded-2xl border border-slate-100 bg-slate-50 flex flex-col gap-2"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <h3 className="text-sm font-semibold text-slate-900">
+                          {q.title}
+                        </h3>
+                        <p className="text-[11px] text-slate-500">
+                          By:{" "}
+                          {q.created_by_username ||
+                            q.created_by ||
+                            "Unknown"}{" "}
+                          • Category: {q.category || "Uncategorized"}
+                        </p>
+                      </div>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-100">
+                        Pending
+                      </span>
+                    </div>
+                    <div className="flex gap-2 mt-1">
+                      <button
+                        onClick={() => approveMutation.mutate(q.id)}
+                        className="px-3 py-1.5 rounded-full bg-emerald-600 text-white text-[11px] font-semibold hover:bg-emerald-700"
+                      >
+                        Approve
+                      </button>
+                      <button
+                        onClick={() => rejectMutation.mutate(q.id)}
+                        className="px-3 py-1.5 rounded-full bg-red-600 text-white text-[11px] font-semibold hover:bg-red-700"
+                      >
+                        Reject
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-        )}
-      </div>
 
-      {/* REPORTS */}
-      <div className="mb-10">
-        <h2 className="text-xl font-semibold mb-3">Reported Quizzes</h2>
-
-        {loadingReports ? (
-          <p>Loading...</p>
-        ) : reports?.length === 0 ? (
-          <p className="text-gray-500">No reports at the moment.</p>
-        ) : (
-          <div className="space-y-4">
-            {reports.map((r) => (
-              <div key={r.id} className="p-4 bg-white rounded shadow">
-                <h3 className="font-semibold">{r.quiz_title}</h3>
-                <p className="text-gray-600 text-sm mb-2">Reason: {r.reason}</p>
-                <p className="text-gray-500 text-sm">
-                  By: {r.reported_by_username} • {new Date(r.created_at).toDateString()}
+          {/* REPORTS */}
+          <div className="bg-white/80 backdrop-blur rounded-3xl border border-white/60 shadow-sm p-5 flex flex-col">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <h2 className="text-sm font-semibold text-slate-900">
+                  Reported quizzes
+                </h2>
+                <p className="text-[11px] text-slate-500">
+                  Recent user reports and feedback.
                 </p>
               </div>
-            ))}
-          </div>
-        )}
-      </div>
+              <span className="text-[11px] px-3 py-1 rounded-full bg-slate-100 text-slate-700">
+                {reports.length} reports
+              </span>
+            </div>
 
-      {/* EXPORT */}
-      <div>
-        <a
-          href="http://127.0.0.1:8000/api/admin/reports/export/"
-          className="px-4 py-2 bg-gray-800 text-white rounded hover:bg-gray-900"
-        >
-          Export Reports
-        </a>
+            {loadingReports ? (
+              <p className="text-xs text-slate-500">Loading reports…</p>
+            ) : errorReports ? (
+              <p className="text-xs text-red-500">Failed to load reports.</p>
+            ) : reports.length === 0 ? (
+              <p className="text-xs text-slate-400">No reports at the moment.</p>
+            ) : (
+              <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1">
+                {reports.map((r) => (
+                  <div
+                    key={r.id}
+                    className="p-4 rounded-2xl border border-slate-100 bg-slate-50"
+                  >
+                    <h3 className="text-sm font-semibold text-slate-900">
+                      {r.quiz_title || "Unknown quiz"}
+                    </h3>
+                    <p className="text-[11px] text-slate-600 mt-1">
+                      Reason: {r.reason}
+                    </p>
+                    <p className="text-[11px] text-slate-400 mt-1">
+                      By: {r.reported_by_email || "Unknown"} •{" "}
+                      {r.created_at
+                        ? new Date(r.created_at).toLocaleString()
+                        : ""}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
       </div>
     </div>
   );
-};
-
-export default AdminPanel;
+}

@@ -87,7 +87,7 @@ function Minigames() {
               <p className="text-sm text-gray-500 mt-2">{game.desc}</p>
               <p className="text-xs text-gray-400 mt-2">{game.xp}</p>
               <button className="mt-4 w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
-                Play Now
+                Coming soon!
               </button>
             </div>
           ))}

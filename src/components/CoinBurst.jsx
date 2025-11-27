@@ -22,6 +22,7 @@ function CoinBurst({ amount, onDone }) {
         .animate-burst { animation: burst 1.6s ease-out forwards; }
       `}</style>
     </div>
+    
   );
 }
 

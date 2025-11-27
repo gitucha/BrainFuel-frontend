@@ -27,7 +27,7 @@ function CreateQuiz() {
 
   const createQuizMutation = useMutation({
     mutationFn: async (payload) => {
-      const { data } = await api.post("/quizzes/create/", payload);
+      const { data } = await api.post("/quizzes/", payload);
       return data;
     },
     onSuccess: () => navigate("/dashboard"),
