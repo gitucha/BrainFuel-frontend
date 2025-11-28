@@ -542,12 +542,12 @@ export default function Dashboard() {
               Notifications ({unreadCount})
             </button>
 
-            <button
+            {/* <button
               onClick={goHelp}
               className="w-full text-left px-4 py-3 rounded-2xl bg-slate-50 text-xs font-medium text-slate-700 hover:bg-slate-100"
             >
-              Help center & contact
-            </button>
+              
+            </button> */}
           </div>
 
           {/* Subscription card */}
@@ -575,12 +575,11 @@ export default function Dashboard() {
 
         {/* FOOTER CTA */}
         <section className="text-center py-4 text-xs text-slate-500">
-          Need help?{" "}
+          {" "}
           <button
             onClick={goHelp}
             className="text-blue-600 hover:underline"
           >
-            Visit the Help Center
           </button>
         </section>
       </div>

@@ -26,6 +26,8 @@ import QuizMultiplayer from "./pages/QuizMultiplayer";
 import Categories from "./pages/Categories";
 import PaystackCallback from "./pages/PaystackCallback";
 import PaymentsSuccess from "./pages/PaymentsSuccess";
+import MultiplayerLobby from "./pages/MultiplayerLobby";
+import Terms from "./pages/Terms";
 
 function App() {
   return (
@@ -49,7 +51,7 @@ function App() {
                 <Route path="/register" element={<Register />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/reset-password/:uid/:token" element={<ResetPassword />} />
-
+                <Route path="/terms" element={<Terms />} />
                 {/* PAYSTACK */}
                 <Route path="/payments/verify" element={<PaystackCallback />} />
                 <Route path="/payments/success" element={<PaymentsSuccess />} />
@@ -108,6 +110,11 @@ function App() {
                 <Route
                   path="/notifications"
                   element={<ProtectedRoute><Notifications /></ProtectedRoute>}
+                />   
+                
+                 <Route
+                  path="/multiplayer"
+                  element={<ProtectedRoute><MultiplayerLobby /></ProtectedRoute> }
                 />
 
                 <Route

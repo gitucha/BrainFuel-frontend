@@ -1,22 +1,34 @@
-export function createQuizSocket(roomId, onMessage, onOpen, onClose) {
-  const protocol = window.location.protocol === "https:" ? "wss" : "ws";
-  const base = import.meta.env.VITE_WS_URL || `${protocol}://${window.location.host}`;
-  const url = `${base}/ws/quiz/${roomId}/`;
-  const token = localStorage.getItem("access");
-  // If you need to pass token, some servers accept ?token=... query
-  const ws = new WebSocket(`${url}?token=${token}`);
+// src/lib/multiplayer.js
+export function createQuizSocket(roomCode, onMessage) {
+  const wsScheme = window.location.protocol === "https:" ? "wss" : "ws";
+  const wsUrl = `${wsScheme}://${window.location.host}/ws/quiz/${roomCode}/`;
 
-  ws.onopen = () => onOpen?.();
+  const ws = new WebSocket(wsUrl);
+
+  ws.onopen = () => {
+    console.log("[WS] connected to room", roomCode);
+  };
+
   ws.onmessage = (event) => {
     try {
       const data = JSON.parse(event.data);
-      onMessage?.(data);
-    } catch (e) {
-      console.error("WS parse err", e);
+      // data will look like:
+      // { type: "state_update", data: {...} }
+      // { type: "question", question: {...}, index, total }
+      // { type: "results", payload: {...} }
+      if (onMessage) onMessage(data);
+    } catch (err) {
+      console.warn("[WS] parse error", err);
     }
   };
-  ws.onclose = () => onClose?.();
-  ws.onerror = (e) => console.error("WS error", e);
+
+  ws.onerror = (event) => {
+    console.warn("[WS] error", event);
+  };
+
+  ws.onclose = () => {
+    console.log("[WS] closed for room", roomCode);
+  };
 
   return ws;
 }

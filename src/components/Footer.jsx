@@ -8,7 +8,7 @@ function Footer() {
         <p className="mt-2">
           Made with love for learners worldwide •{" "}
           <a
-            href="#"
+            href="/terms"
             className="text-blue-600 hover:underline"
           >
             Terms & Conditions

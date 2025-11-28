@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
+import brain from "../assets/brain.jpeg";
 
 function HomePage() {
   const { user, loadingUser } = useAuth();
@@ -147,7 +148,6 @@ function HomePage() {
               </p>
             </Link>
 
-            {/* CHANGED: was Leaderboard → now Notifications */}
             <Link
               to="/notifications"
               className="bg-white rounded-3xl shadow-sm p-5 border border-slate-100 hover:shadow-md transition"
@@ -204,7 +204,7 @@ function HomePage() {
             </div>
 
             <p className="mt-4 text-xs text-slate-500">
-              No credit card required • Designed for students, self-learners and teams.
+              No credit card required for sign-up • Designed for students, self-learners and teams.
             </p>
           </div>
 
@@ -212,9 +212,9 @@ function HomePage() {
             <div className="bg-white/90 backdrop-blur p-6 rounded-3xl shadow-lg w-full max-w-md mx-auto border border-white/60">
               <div className="h-56 rounded-2xl bg-linear-to-br from-blue-100 to-indigo-100 flex flex-col items-center justify-center text-blue-500 font-semibold overflow-hidden">
                 <img
-                  src="/assets/download(10).jpeg"
+                  src={brain}
                   alt="BrainFuel illustration"
-                  className="h-40 object-cover rounded-xl mb-2"
+                  className="h-47 w-43 object-cover rounded-xl mb-2"
                 />
                 <p className="text-sm">We Make It Work</p>
               </div>

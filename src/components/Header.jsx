@@ -6,8 +6,8 @@ import { useAuth } from "../hooks/useAuth";
 const baseNavLinks = [
   { to: "/", label: "Home" },
   { to: "/categories", label: "Quizzes" },
+  { to: "/multiplayer", label: "Multiplayer" },
   { to: "/achievements", label: "Achievements" },
-  { to: "/notifications", label: "Notifications" },
   { to: "/shop", label: "Shop" },
   { to: "/subscription", label: "Subscription" },
 
