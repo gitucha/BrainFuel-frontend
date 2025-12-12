@@ -177,12 +177,12 @@ function Register() {
                 >
                   Terms & Conditions
                 </Link>{" "}
-                and{" "}
+                {" "}
                 <Link
                   to="/help"
                   className="text-blue-600 font-medium hover:underline"
                 >
-                  Help / Contact
+                
                 </Link>
                 .
               </label>

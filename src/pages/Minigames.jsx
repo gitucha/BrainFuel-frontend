@@ -1,123 +1,116 @@
-import React, { useState } from "react";
+import React from "react";
+import { useNavigate } from "react-router-dom";
 
 function Minigames() {
-  const [spinCount, setSpinCount] = useState(1);
-  const [result, setResult] = useState("");
+  const navigate = useNavigate();
 
-  const handleSpin = () => {
-    if (spinCount <= 0) return;
-    const prizes = ["+50 XP", "+100 Coins", "Try Again", "+200 XP", "Bonus Badge!"];
-    const reward = prizes[Math.floor(Math.random() * prizes.length)];
-    setResult(reward);
-    setSpinCount(spinCount - 1);
+  const goMode = (mode) => {
+    // You can switch behaviour per mode here
+    if (mode === "speed") {
+      // small, fast quiz
+      navigate("/categories?mode=speed&num_questions=5&difficulty=easy");
+    } else if (mode === "endurance") {
+      navigate(
+        "/categories?mode=endurance&num_questions=15&difficulty=medium"
+      );
+    } else if (mode === "hardcore") {
+      navigate("/categories?mode=hardcore&num_questions=10&difficulty=hard");
+    }
   };
 
-  const minigames = [
-    { title: "Memory Match", desc: "Flip and find the pairs to test your memory!", xp: "+50 XP" },
-    { title: "Word Scramble", desc: "Unscramble the words in record time!", xp: "+40 XP" },
-    { title: "Quick Math", desc: "Solve math problems under pressure!", xp: "+60 XP" },
-    { title: "Trivia Master", desc: "Prove your knowledge in random topics!", xp: "+75 XP" },
-  ];
-
-  const challenges = [
-    { title: "History of Science", xp: "+200 XP" },
-    { title: "World Geography", xp: "+220 XP" },
-    { title: "Literary Classics", xp: "+180 XP" },
-    { title: "Advanced Chemistry", xp: "+240 XP" },
-  ];
-
   return (
-    <div className="max-w-6xl mx-auto px-6 py-10">
-      {/* HEADER */}
-      <h2 className="text-3xl font-bold text-center mb-10">🎮 Minigames & Quizzes</h2>
-
-      {/* DAILY SPIN SECTION */}
-      <div className="bg-white p-8 rounded-xl shadow-sm text-center mb-12">
-        <h3 className="text-xl font-semibold text-blue-700">Daily Spin & Rewards</h3>
-        <p className="text-gray-500 text-sm mt-2 mb-6">
-          Spin the wheel for a chance to win amazing daily prizes and XP boosts!
-        </p>
-
-        <div className="flex flex-col items-center justify-center">
-          <div className="relative w-48 h-48 border-[6px] border-blue-200 rounded-full flex items-center justify-center bg-linear-to-br from-blue-50 to-blue-100">
-            <div className="text-2xl font-semibold text-blue-600">
-              🎡 Spin!
-            </div>
-          </div>
-          <button
-            onClick={handleSpin}
-            disabled={spinCount <= 0}
-            className={`mt-6 px-6 py-2 rounded-md ${
-              spinCount > 0
-                ? "bg-blue-600 text-white hover:bg-blue-700"
-                : "bg-gray-300 text-gray-500 cursor-not-allowed"
-            }`}
-          >
-            {spinCount > 0 ? "Spin Now" : "No Spins Left"}
-          </button>
-
-          {result && (
-            <p className="mt-4 text-green-600 font-semibold text-lg">
-               You won {result}!
-            </p>
-          )}
-
-          <p className="text-xs text-gray-500 mt-2">
-            Spins Left: {spinCount}
+    <div className="min-h-screen bg-linear-to-br from-[#e8f3ff] via-white to-[#dce8ff]">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10 space-y-8">
+        {/* HERO */}
+        <section className="space-y-3">
+          <p className="text-[10px] uppercase tracking-[0.2em] text-blue-500">
+            Minigames
           </p>
-        </div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
+            Quick modes to warm up your brain
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-600 max-w-xl">
+            Jump into short, focused sessions: speed rounds, endurance quizzes
+            and hardcore challenges — all powered by the same BrainFuel
+            question engine.
+          </p>
+        </section>
+
+        {/* CARDS */}
+        <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Speed round */}
+          <div className="bg-white/80 border border-white/70 rounded-3xl shadow-sm p-5 flex flex-col justify-between">
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.18em] text-emerald-500">
+                Warm up
+              </p>
+              <h2 className="mt-2 text-sm font-semibold text-slate-900">
+                Speed round
+              </h2>
+              <p className="mt-1 text-xs text-slate-600">
+                5 quick questions on easy difficulty. Perfect for a 2-minute
+                focus boost.
+              </p>
+            </div>
+            <button
+              onClick={() => goMode("speed")}
+              className="mt-4 w-full px-4 py-2 rounded-full bg-emerald-500 text-white text-xs font-semibold hover:bg-emerald-600"
+            >
+              Play speed round
+            </button>
+          </div>
+
+          {/* Endurance mode */}
+          <div className="bg-white/80 border border-white/70 rounded-3xl shadow-sm p-5 flex flex-col justify-between">
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.18em] text-indigo-500">
+                Stay sharp
+              </p>
+              <h2 className="mt-2 text-sm font-semibold text-slate-900">
+                Endurance quiz
+              </h2>
+              <p className="mt-1 text-xs text-slate-600">
+                15 questions on mixed difficulty. Great for longer practice
+                sessions.
+              </p>
+            </div>
+            <button
+              onClick={() => goMode("endurance")}
+              className="mt-4 w-full px-4 py-2 rounded-full bg-indigo-500 text-white text-xs font-semibold hover:bg-indigo-600"
+            >
+              Play endurance mode
+            </button>
+          </div>
+
+          {/* Hardcore mode */}
+          <div className="bg-white/80 border border-white/70 rounded-3xl shadow-sm p-5 flex flex-col justify-between">
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.18em] text-red-500">
+                Challenge
+              </p>
+              <h2 className="mt-2 text-sm font-semibold text-slate-900">
+                Hardcore challenge
+              </h2>
+              <p className="mt-1 text-xs text-slate-600">
+                10 hard-level questions with higher XP and thaler rewards.
+              </p>
+            </div>
+            <button
+              onClick={() => goMode("hardcore")}
+              className="mt-4 w-full px-4 py-2 rounded-full bg-red-500 text-white text-xs font-semibold hover:bg-red-600"
+            >
+              Play hardcore
+            </button>
+          </div>
+        </section>
+
+        <section className="text-xs text-slate-500">
+          Tip: all minigames use the same XP and thaler system, so they still
+          count towards your level and achievements.
+        </section>
       </div>
-
-      {/* AVAILABLE MINIGAMES */}
-      <section className="mb-12">
-        <h3 className="text-xl font-semibold mb-6 text-center text-gray-800">
-          Available Minigames
-        </h3>
-
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {minigames.map((game, i) => (
-            <div
-              key={i}
-              className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition"
-            >
-              <div className="h-28 bg-linear-to-br from-blue-50 to-blue-100 flex items-center justify-center rounded-md text-4xl">
-                🎲
-              </div>
-              <h4 className="font-semibold mt-4 text-blue-700">{game.title}</h4>
-              <p className="text-sm text-gray-500 mt-2">{game.desc}</p>
-              <p className="text-xs text-gray-400 mt-2">{game.xp}</p>
-              <button className="mt-4 w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
-                Coming soon!
-              </button>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* CHALLENGE QUIZZES */}
-      <section>
-        <h3 className="text-xl font-semibold mb-6 text-center text-gray-800">
-          Challenge Quizzes
-        </h3>
-
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {challenges.map((quiz, i) => (
-            <div
-              key={i}
-              className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition"
-            >
-              <div className="font-semibold text-gray-800">{quiz.title}</div>
-              <p className="text-sm text-gray-500 mt-2">{quiz.xp}</p>
-              <button className="mt-4 w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
-                Start Quiz
-              </button>
-            </div>
-          ))}
-        </div>
-      </section>
     </div>
   );
 }
 
 export default Minigames;
-

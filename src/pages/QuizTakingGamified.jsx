@@ -1,3 +1,4 @@
+// src/pages/QuizTakingGamified.jsx
 import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -24,10 +25,8 @@ const fetchQuizSession = async (id, numQuestions, difficultyParam) => {
     params.set("difficulty", difficultyParam);
   }
 
-  const { data } = await api.get(
-    `/quizzes/${id}/questions/?${params.toString()}`
-  );
-  return data; // { quiz, num_questions, difficulty, questions }
+  const { data } = await api.get(`/quizzes/${id}/questions/?${params.toString()}`);
+  return data; // expected { quiz, num_questions, difficulty, questions }
 };
 
 export default function QuizTakingGamified() {
@@ -53,6 +52,7 @@ export default function QuizTakingGamified() {
     queryKey: ["quiz_session", id, urlNumQuestions, urlDifficulty],
     queryFn: () => fetchQuizSession(id, urlNumQuestions, urlDifficulty),
     enabled: !!id,
+    retry: 1,
   });
 
   const quiz = data?.quiz;
@@ -81,7 +81,7 @@ export default function QuizTakingGamified() {
       const { data } = await api.post(`/quizzes/${id}/submit/`, payload);
       return data;
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       setHasSubmitted(true);
 
       setXpGained(data.xp_earned || 0);
@@ -113,8 +113,30 @@ export default function QuizTakingGamified() {
         });
       }
 
+      // refresh profile & related caches
       qc.invalidateQueries(["me"]);
-      setTimeout(() => navigate("/dashboard"), 1800);
+      qc.invalidateQueries(["notifications"]);
+      qc.invalidateQueries(["achievements/my"]);
+      qc.invalidateQueries(["achievements/all"]);
+      qc.invalidateQueries(["achievements/overview"]);
+
+      // Best-effort: prefetch achievements data into react-query cache
+      try {
+        const [myRes, allRes, ovRes] = await Promise.allSettled([
+          api.get("/achievements/my/"),
+          api.get("/achievements/all/"),
+          api.get("/achievements/overview/"),
+        ]);
+        if (myRes.status === "fulfilled") qc.setQueryData(["achievements/my"], myRes.value.data);
+        if (allRes.status === "fulfilled") qc.setQueryData(["achievements/all"], allRes.value.data);
+        if (ovRes.status === "fulfilled") qc.setQueryData(["achievements/overview"], ovRes.value.data);
+      } catch (e) {
+        // non-fatal
+        // console.warn("Prefetch achievements failed", e);
+      }
+
+      // navigate back to dashboard after a short pause to let toasts show
+      setTimeout(() => navigate("/dashboard"), 2300);
     },
     onError: (err) => {
       console.error("Submit error:", err?.response || err);
@@ -150,6 +172,7 @@ export default function QuizTakingGamified() {
     // If backend ever provides a time_limit, respect it
     if (typeof quiz.time_limit === "number") {
       setTimeLeft(quiz.time_limit);
+      setTimerFired(false);
       return;
     }
 
@@ -195,15 +218,51 @@ export default function QuizTakingGamified() {
   }, [index]);
 
   // ---------------- GUARDS ----------------
-  if (isFetching) return <div className="p-6">Loading...</div>;
-  if (!quiz) return <div className="p-6">Quiz not found.</div>;
-  if (!questions || questions.length === 0)
-    return <div className="p-6 text-red-600">No questions for this session.</div>;
+  if (isFetching) {
+    return (
+      <div className="p-6 min-h-screen flex items-center justify-center bg-linear-to-br from-indigo-50 to-white">
+        <div className="flex items-center gap-3 bg-white/90 rounded-2xl p-4 shadow">
+          <div className="w-2 h-2 rounded-full bg-blue-600 animate-bounce" />
+          <div className="w-2 h-2 rounded-full bg-blue-600 animate-bounce [animation-delay:.15s]" />
+          <div className="w-2 h-2 rounded-full bg-blue-600 animate-bounce [animation-delay:.3s]" />
+          <span className="text-sm text-slate-700">Loading quiz…</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (!quiz) {
+    return (
+      <div className="p-6 min-h-screen flex items-center justify-center bg-linear-to-br from-indigo-50 to-white">
+        <div className="bg-white p-6 rounded-xl shadow text-center">
+          <p className="text-sm text-red-600">Quiz not found.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!questions || questions.length === 0) {
+    return (
+      <div className="p-6 min-h-screen flex items-center justify-center bg-linear-to-br from-indigo-50 to-white">
+        <div className="bg-white p-6 rounded-xl shadow text-center">
+          <p className="text-sm text-red-600">No questions for this session.</p>
+          <p className="text-xs text-slate-500 mt-2">
+            Try a different number of questions or difficulty.
+          </p>
+          <button
+            onClick={() => navigate("/categories")}
+            className="mt-4 px-4 py-2 rounded-full bg-blue-600 text-white text-sm"
+          >
+            Browse quizzes
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   // ---------------- CURRENT QUESTION ----------------
   const q = questions[index];
-  const correctOptionId =
-    q?.options?.find((o) => o.is_correct)?.id ?? null;
+  const correctOptionId = q?.options?.find((o) => o.is_correct)?.id ?? null;
 
   // ---------------- HANDLERS ----------------
   const handlePick = (optionId) => {
@@ -327,7 +386,7 @@ export default function QuizTakingGamified() {
               disabled={!selected}
               className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded shadow disabled:bg-gray-300"
             >
-              {index === questions.length - 1 ? "Finish" : "Next"}
+              {index === questions.length - 1 ? (isSubmitting ? "Submitting..." : "Finish") : "Next"}
             </button>
           </div>
         </div>
@@ -336,20 +395,9 @@ export default function QuizTakingGamified() {
       {/* Rewards */}
       {xpGained > 0 && <XpProgress amount={xpGained} />}
       {thalersEarned > 0 && <ThalerToast amount={thalersEarned} />}
-      {coinAmount > 0 && (
-        <CoinBurst amount={coinAmount} onDone={() => setCoinAmount(0)} />
-      )}
-      {streakPopup && (
-        <StreakToast
-          streak={streakPopup}
-          onClose={() => setStreakPopup(null)}
-        />
-      )}
-      <LevelUpModal
-        open={levelUpOpen}
-        level={newLevel}
-        onClose={() => setLevelUpOpen(false)}
-      />
+      {coinAmount > 0 && <CoinBurst amount={coinAmount} onDone={() => setCoinAmount(0)} />}
+      {streakPopup && <StreakToast streak={streakPopup} onClose={() => setStreakPopup(null)} />}
+      <LevelUpModal open={levelUpOpen} level={newLevel} onClose={() => setLevelUpOpen(false)} />
     </div>
   );
 }

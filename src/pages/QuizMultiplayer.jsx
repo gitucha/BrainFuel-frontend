@@ -1,4 +1,3 @@
-// src/pages/QuizMultiplayer.jsx
 import React, {
   useEffect,
   useMemo,
@@ -13,7 +12,7 @@ import { useAuth } from "../hooks/useAuth";
 import { useToast } from "../context/ToastContext";
 
 export default function QuizMultiplayer() {
-  const { roomId } = useParams(); // this is the room code
+  const { roomId } = useParams(); // this is the room *code*
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -36,24 +35,43 @@ export default function QuizMultiplayer() {
 
   const wsRef = useRef(null);
 
-  // --- REST helpers -------------------------------------------------
+  // -------- REST helpers ---------------------------------------------
 
   const joinRoom = useCallback(
     async (code, spectatorFlag) => {
-      await api.post(`/multiplayer/rooms/${code}/join/`, {
-        is_spectator: spectatorFlag,
-      });
+      try {
+        await api.post(`/multiplayer/rooms/${code}/join/`, {
+          is_spectator: spectatorFlag,
+        });
+      } catch (err) {
+        console.error("Join room error:", err);
+        const msg =
+          err?.response?.data?.detail || "Unable to join room.";
+        showToast({ title: "Error", message: msg, variant: "error" });
+        throw err;
+      }
     },
-    []
+    [showToast]
   );
 
-  const fetchRoom = useCallback(async (code) => {
-    const { data } = await api.get(`/multiplayer/rooms/${code}/`);
-    setRoom(data);
-    setStatus(data.status || "waiting");
-  }, []);
+  const fetchRoom = useCallback(
+    async (code) => {
+      try {
+        const { data } = await api.get(`/multiplayer/rooms/${code}/`);
+        setRoom(data);
+        setStatus(data.status || "waiting");
+      } catch (err) {
+        console.error("Fetch room error:", err);
+        const msg =
+          err?.response?.data?.detail || "Room not found.";
+        showToast({ title: "Error", message: msg, variant: "error" });
+        throw err;
+      }
+    },
+    [showToast]
+  );
 
-  // --- WebSocket setup ----------------------------------------------
+  // -------- WebSocket setup ------------------------------------------
 
   useEffect(() => {
     if (!roomCode) return;
@@ -65,35 +83,35 @@ export default function QuizMultiplayer() {
         setConnecting(true);
         setWsError(null);
 
-        // 1) join via REST
+        // 1) Join via REST
         await joinRoom(roomCode, joinAsSpectator);
 
-        // 2) fetch room meta
+        // 2) Fetch room meta
         await fetchRoom(roomCode);
 
-        // 3) open WS
+        // 3) Open WS
         const ws = createQuizSocket(roomCode, (msg) => {
           if (!msg || cancelled) return;
 
           switch (msg.type) {
             case "state_update": {
-              const data = msg.data || {};
-              const started = !!data.started;
-              setStatus(started ? "active" : "waiting");
+              // if in future you embed ranking here, pick it up:
+              if (msg.data?.ranking) {
+                setRanking(msg.data.ranking);
+              }
+              break;
+            }
 
-              // Update participants + host in room object
-              setRoom((prev) => ({
-                ...(prev || {}),
-                host_id: data.host,
-                participants: data.players || [],
-                questionIndex: data.questionIndex,
-                totalQuestions: data.totalQuestions,
-              }));
+            case "status": {
+              // optional status messages from backend
+              if (msg.payload?.status) {
+                setStatus(msg.payload.status);
+              }
               break;
             }
 
             case "question": {
-              // msg: { type: "question", question, index, total }
+              // consumer sends: { type: "question", question, index, total }
               setQuestion(msg.question || null);
               setSelectedOption(null);
               setLocked(false);
@@ -101,16 +119,43 @@ export default function QuizMultiplayer() {
               break;
             }
 
+            case "ranking": {
+              // optional live ranking messages
+              const list = msg.payload || msg.ranking || [];
+              setRanking(Array.isArray(list) ? list : []);
+              break;
+            }
+
             case "results": {
-              // msg.payload: { summary, ranking }
+              // consumer sends: { type: "results", payload: { summary, ranking } }
               const payload = msg.payload || {};
-              setFinalResults(payload);
-              setRanking(payload.ranking || []);
+              const list = payload.ranking || [];
+              setFinalResults(Array.isArray(list) ? list : []);
+              setRanking(Array.isArray(list) ? list : []); // keep right-side “Players & ranking” in sync
               setStatus("finished");
               break;
             }
 
+            case "no_questions": {
+              const detail =
+                msg.payload?.detail || "No questions available for this match.";
+              setQuestion(null);
+              setStatus("waiting");
+              showToast({
+                title: "No questions",
+                message: detail,
+                variant: "info",
+              });
+              break;
+            }
+
+            case "room_update": {
+              setRoom((prev) => ({ ...(prev || {}), ...(msg.payload || {}) }));
+              break;
+            }
+
             default:
+              // ignore unknown messages so your other code can evolve safely
               break;
           }
         });
@@ -119,7 +164,7 @@ export default function QuizMultiplayer() {
         setIsSpectator(joinAsSpectator);
         setConnecting(false);
       } catch (err) {
-        console.error("WS init / join error:", err);
+        console.error("WS setup error:", err);
         setConnecting(false);
         setWsError("Failed to connect to multiplayer room.");
       }
@@ -132,13 +177,11 @@ export default function QuizMultiplayer() {
       }
       wsRef.current = null;
     };
-  }, [roomCode, joinAsSpectator, joinRoom, fetchRoom]);
+  }, [roomCode, joinAsSpectator, joinRoom, fetchRoom, showToast]);
 
   const isHost = room && user && room.host_id === user.id;
-  const participants = room?.participants || [];
-  const roomTitle = room?.quiz_title || "Multiplayer quiz";
 
-  // --- Answer handling ----------------------------------------------
+  // -------- Answer handling ------------------------------------------
 
   const handleAnswer = (optionId) => {
     if (!question || !optionId) return;
@@ -153,7 +196,7 @@ export default function QuizMultiplayer() {
     try {
       ws.send(
         JSON.stringify({
-          type: "answer",
+          action: "answer",
           option_id: optionId,
         })
       );
@@ -165,25 +208,26 @@ export default function QuizMultiplayer() {
     setLocked(true);
   };
 
-  // --- Host actions -------------------------------------------------
+  // -------- Host actions ---------------------------------------------
 
   const handleStartMatch = async () => {
     if (!roomCode || !isHost) return;
 
     try {
-      // 1) REST: mark room active / allow audits/admin
+      // REST: mark match started
       await api.post(`/multiplayer/rooms/${roomCode}/start/`);
 
-      // 2) WS: actually trigger question loading
-      const ws = wsRef.current;
-      if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.send(
+      // WS: actually start game & fetch questions
+
+      if(wsRef.current?.readyState === WebSocket.OPEN){
+        wsRef.current.send(
           JSON.stringify({
-            type: "start_game",
+            action: "start_game",
+            difficulty: "easy",
+            count: 5,
           })
         );
       }
-
       showToast({
         title: "Match started",
         message: "Questions will appear live.",
@@ -203,21 +247,21 @@ export default function QuizMultiplayer() {
     if (!roomCode || !isHost) return;
     try {
       await api.post(`/multiplayer/rooms/${roomCode}/rematch/`);
-
-      // tell WS to restart game
-      const ws = wsRef.current;
-      if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.send(
-          JSON.stringify({
-            type: "start_game",
-          })
-        );
-      }
-
       setFinalResults(null);
       setSelectedOption(null);
       setLocked(false);
       setStatus("waiting");
+
+      const ws = wsRef.current;
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(
+          JSON.stringify({
+            action: "start_game",
+            difficulty: "easy",
+            count: 5,
+          })
+        );
+      }
 
       showToast({
         title: "Rematch requested",
@@ -238,12 +282,19 @@ export default function QuizMultiplayer() {
     navigate("/multiplayer");
   };
 
-  // --- Render states ------------------------------------------------
+  // -------- UI helpers -----------------------------------------------
+
+  const roomTitle = room?.quiz_title || "Multiplayer quiz";
+  const participants = room?.participants || [];
+
+  // -------- Render states --------------------------------------------
 
   if (!roomCode) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-100">
-        <div className="text-sm text-slate-600">No room code provided.</div>
+        <div className="text-sm text-slate-600">
+          No room code provided.
+        </div>
       </div>
     );
   }
@@ -278,6 +329,8 @@ export default function QuizMultiplayer() {
       </div>
     );
   }
+
+  // -------- Main layout ----------------------------------------------
 
   return (
     <div className="min-h-screen bg-linear-to-br from-[#e8f3ff] via-white to-[#dce8ff]">
@@ -382,9 +435,9 @@ export default function QuizMultiplayer() {
             )}
           </div>
 
-          {/* Right column: participants + results + rematch */}
+          {/* Right column: players + results */}
           <div className="space-y-4">
-            {/* Participants / scoreboard */}
+            {/* Players & ranking */}
             <div className="bg-white/80 backdrop-blur rounded-3xl shadow-sm border border-white/70 p-4">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-sm font-semibold text-slate-900">
@@ -405,7 +458,9 @@ export default function QuizMultiplayer() {
                 {(ranking.length ? ranking : participants).map(
                   (entry, idx) => {
                     const username =
-                      entry.username ?? entry.user?.username ?? "Player";
+                      entry.username ??
+                      entry.user?.username ??
+                      "Player";
 
                     const score = entry.score ?? 0;
                     const you =
@@ -451,7 +506,7 @@ export default function QuizMultiplayer() {
               </div>
             </div>
 
-            {/* Final results + rematch */}
+            {/* Match summary + rematch */}
             <div className="bg-white/80 backdrop-blur rounded-3xl shadow-sm border border-white/70 p-4">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-sm font-semibold text-slate-900">
@@ -473,9 +528,9 @@ export default function QuizMultiplayer() {
                 </p>
               )}
 
-              {finalResults && (finalResults.ranking || []).length > 0 && (
+              {finalResults && finalResults.length > 0 && (
                 <div className="space-y-1 max-h-40 overflow-y-auto pr-1">
-                  {finalResults.ranking.map((r, idx) => {
+                  {finalResults.map((r, idx) => {
                     const username =
                       r.username ?? r.user?.username ?? "Player";
                     const score = r.score ?? 0;
